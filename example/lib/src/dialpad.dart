@@ -89,7 +89,6 @@ class _MyDialPadWidget extends State<DialPadWidget>
     _preferences = await SharedPreferences.getInstance();
     _registerState = helper!.registerState;
     if (_registerState.state != RegistrationStateEnum.REGISTERED) {
-      print('is register again.............................................');
       _sendAuth();
     }
     _dest = _preferences.getString('dest') ?? '8888';
