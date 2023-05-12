@@ -82,7 +82,7 @@ class _MyDialPadWidget extends State<DialPadWidget>
 
   void _loadSettings() async {
     _preferences = await SharedPreferences.getInstance();
-    _dest = _preferences.getString('dest') ?? 'sip:8888@143.244.209.136';
+    _dest = _preferences.getString('dest') ?? '8888';
     _textController = TextEditingController(text: _dest);
     _textController!.text = _dest!;
 
@@ -149,8 +149,9 @@ class _MyDialPadWidget extends State<DialPadWidget>
       mediaStream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
     }
 
-    helper!.call(dest, voiceonly: voiceOnly, mediaStream: mediaStream);
-    _preferences.setString('dest', dest);
+    var destUri = 'sip:$dest@143.244.209.136';
+
+    helper!.call(destUri, voiceonly: voiceOnly, mediaStream: mediaStream);
     return null;
   }
 
@@ -365,6 +366,8 @@ class _MyDialPadWidget extends State<DialPadWidget>
   void callStateChanged(Call call, CallState callState) {
     if (callState.state == CallStateEnum.CALL_INITIATION) {
       Navigator.pushNamed(context, '/callscreen', arguments: call);
+      var dest = _textController?.text;
+      _preferences.setString('dest', dest!);
       if (_appState == AppLifecycleState.paused) {
         _showIncomingCallNotification();
       }

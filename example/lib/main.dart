@@ -58,7 +58,7 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
         fontFamily: 'Roboto',
       ),
-      initialRoute: '/',
+      initialRoute: '/register',
       onGenerateRoute: _onGenerateRoute,
     );
   }

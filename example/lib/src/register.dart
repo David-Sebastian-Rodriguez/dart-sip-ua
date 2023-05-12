@@ -13,8 +13,6 @@ class _MyRegisterWidget extends State<RegisterWidget>
     implements SipUaHelperListener {
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _wsUriController = TextEditingController();
-  final TextEditingController _sipUriController = TextEditingController();
-  final TextEditingController _displayNameController = TextEditingController();
   final TextEditingController _authorizationUserController =
       TextEditingController();
   final Map<String, String> _wsExtraHeaders = {
@@ -38,7 +36,6 @@ class _MyRegisterWidget extends State<RegisterWidget>
   deactivate() {
     super.deactivate();
     helper!.removeSipUaHelperListener(this);
-    _saveSettings();
   }
 
   void _loadSettings() async {
@@ -46,40 +43,29 @@ class _MyRegisterWidget extends State<RegisterWidget>
     const extencion2 = '561';
     const extencion = extencion2;
     _preferences = await SharedPreferences.getInstance();
+    // codigo para hacer que al inicio se borren los datos guardados de autenticacion
+    //_preferences.clear();
     setState(() {
       _wsUriController.text =
           _preferences.getString('ws_uri') ?? 'wss://yaco.calltechsa.com:8534';
-      _sipUriController.text =
-          _preferences.getString('sip_uri') ?? 'sip:$extencion@143.244.209.136';
-      _displayNameController.text =
-          _preferences.getString('display_name') ?? 'Flutter SIP UA';
       _passwordController.text =
           _preferences.getString('password') ?? 'Ext${extencion}Calltech*';
       _authorizationUserController.text =
           _preferences.getString('auth_user') ?? extencion;
     });
+    print(validatePreference(_preferences));
+    if (validatePreference(_preferences) &&
+        _registerState.state != RegistrationStateEnum.REGISTERED) _sendAuth();
   }
 
-  //Codigo anterior de la demo
-  /* void _loadSettings() async {
-    _preferences = await SharedPreferences.getInstance();
-    setState(() {
-      _wsUriController.text =
-          _preferences.getString('ws_uri') ?? 'wss://tryit.jssip.net:10443';
-      _sipUriController.text =
-          _preferences.getString('sip_uri') ?? 'hello_flutter@tryit.jssip.net';
-      _displayNameController.text =
-          _preferences.getString('display_name') ?? 'Flutter SIP UA';
-      _passwordController.text = _preferences.getString('password') ?? '';
-      _authorizationUserController.text =
-          _preferences.getString('auth_user') ?? '';
-    });
-  } */
+  bool validatePreference(SharedPreferences preferences) {
+    return preferences.containsKey('ws_uri') &&
+        preferences.containsKey('password') &&
+        preferences.containsKey('auth_user');
+  }
 
   void _saveSettings() {
     _preferences.setString('ws_uri', _wsUriController.text);
-    _preferences.setString('sip_uri', _sipUriController.text);
-    _preferences.setString('display_name', _displayNameController.text);
     _preferences.setString('password', _passwordController.text);
     _preferences.setString('auth_user', _authorizationUserController.text);
   }
@@ -89,6 +75,7 @@ class _MyRegisterWidget extends State<RegisterWidget>
     setState(() {
       _registerState = state;
     });
+    if (state.state == RegistrationStateEnum.REGISTERED) _saveSettings();
   }
 
   void _alert(BuildContext context, String alertFieldName) {
@@ -115,10 +102,11 @@ class _MyRegisterWidget extends State<RegisterWidget>
   void _handleSave(BuildContext context) {
     if (_wsUriController.text == '') {
       _alert(context, "WebSocket URL");
-    } else if (_sipUriController.text == '') {
-      _alert(context, "SIP URI");
     }
+    _sendAuth();
+  }
 
+  void _sendAuth() {
     UaSettings settings = UaSettings();
 
     settings.webSocketUrl = _wsUriController.text;
@@ -126,10 +114,9 @@ class _MyRegisterWidget extends State<RegisterWidget>
     settings.webSocketSettings.allowBadCertificate = true;
     //settings.webSocketSettings.userAgent = 'Dart/2.8 (dart:io) for OpenSIPS.';
 
-    settings.uri = _sipUriController.text;
+    settings.uri = 'sip:${_authorizationUserController.text}@143.244.209.136';
     settings.authorizationUser = _authorizationUserController.text;
     settings.password = _passwordController.text;
-    settings.displayName = _displayNameController.text;
     settings.userAgent = 'Dart SIP Client v1.0.0';
     settings.dtmfMode = DtmfMode.RFC2833;
 
@@ -170,30 +157,6 @@ class _MyRegisterWidget extends State<RegisterWidget>
                         padding: const EdgeInsets.fromLTRB(48.0, 0.0, 48.0, 0),
                         child: TextFormField(
                           controller: _wsUriController,
-                          keyboardType: TextInputType.text,
-                          textAlign: TextAlign.center,
-                          decoration: InputDecoration(
-                            contentPadding: EdgeInsets.all(10.0),
-                            border: UnderlineInputBorder(
-                                borderSide: BorderSide(color: Colors.black12)),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  Column(
-                    children: <Widget>[
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(46.0, 18.0, 48.0, 0),
-                        child: Align(
-                          child: Text('SIP URI:'),
-                          alignment: Alignment.centerLeft,
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(48.0, 0.0, 48.0, 0),
-                        child: TextFormField(
-                          controller: _sipUriController,
                           keyboardType: TextInputType.text,
                           textAlign: TextAlign.center,
                           decoration: InputDecoration(
@@ -254,30 +217,6 @@ class _MyRegisterWidget extends State<RegisterWidget>
                             hintText: _passwordController.text.isEmpty
                                 ? '[Empty]'
                                 : null,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  Column(
-                    children: <Widget>[
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(46.0, 18.0, 48.0, 0),
-                        child: Align(
-                          child: Text('Display Name:'),
-                          alignment: Alignment.centerLeft,
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(48.0, 0.0, 48.0, 0),
-                        child: TextFormField(
-                          controller: _displayNameController,
-                          keyboardType: TextInputType.text,
-                          textAlign: TextAlign.center,
-                          decoration: InputDecoration(
-                            contentPadding: EdgeInsets.all(10.0),
-                            border: UnderlineInputBorder(
-                                borderSide: BorderSide(color: Colors.black12)),
                           ),
                         ),
                       ),
