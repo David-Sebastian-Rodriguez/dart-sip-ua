@@ -24,6 +24,10 @@ class _MyDialPadWidget extends State<DialPadWidget>
   TextEditingController? _textController;
   late SharedPreferences _preferences;
 
+  late String _wsUriController;
+  late String _passwordController;
+  late String _authorizationUserController;
+
   String? receivedMsg;
 
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
@@ -38,6 +42,7 @@ class _MyDialPadWidget extends State<DialPadWidget>
   }
 
   AppLifecycleState? _appState;
+  late RegistrationState _registerState;
 
   @override
   initState() {
@@ -82,6 +87,11 @@ class _MyDialPadWidget extends State<DialPadWidget>
 
   void _loadSettings() async {
     _preferences = await SharedPreferences.getInstance();
+    _registerState = helper!.registerState;
+    if (_registerState.state != RegistrationStateEnum.REGISTERED) {
+      print('is register again.............................................');
+      _sendAuth();
+    }
     _dest = _preferences.getString('dest') ?? '8888';
     _textController = TextEditingController(text: _dest);
     _textController!.text = _dest!;
@@ -89,15 +99,43 @@ class _MyDialPadWidget extends State<DialPadWidget>
     setState(() {});
   }
 
-  //codigo anterior de la demo
-  /* void _loadSettings() async {
-    _preferences = await SharedPreferences.getInstance();
-    _dest = _preferences.getString('dest') ?? 'sip:hello_jssip@tryit.jssip.net';
-    _textController = TextEditingController(text: _dest);
-    _textController!.text = _dest!;
+  void _sendAuth() {
+    setState(() {
+      _wsUriController = _preferences.getString('ws_uri')!;
+      _passwordController = _preferences.getString('password')!;
+      _authorizationUserController = _preferences.getString('auth_user')!;
+    });
 
-    setState(() {});
-  } */
+    final Map<String, String> _wsExtraHeaders = {
+      // 'Origin': ' https://tryit.jssip.net',
+      // 'Host': 'tryit.jssip.net:10443'
+    };
+
+    UaSettings settings = UaSettings();
+
+    settings.webSocketUrl = _wsUriController;
+    settings.webSocketSettings.extraHeaders = _wsExtraHeaders;
+    settings.webSocketSettings.allowBadCertificate = true;
+    //settings.webSocketSettings.userAgent = 'Dart/2.8 (dart:io) for OpenSIPS.';
+
+    settings.uri = 'sip:$_authorizationUserController@143.244.209.136';
+    settings.authorizationUser = _authorizationUserController;
+    settings.password = _passwordController;
+    settings.userAgent = 'Dart SIP Client v1.0.0';
+    settings.dtmfMode = DtmfMode.RFC2833;
+
+    helper!.start(settings);
+  }
+
+  @override
+  void registrationStateChanged(RegistrationState state) {
+    setState(() {
+      _registerState = state;
+    });
+    if (_registerState.state != RegistrationStateEnum.REGISTERED) {
+      //Codigo en caso de que el registro falle
+    }
+  }
 
   void _bindEventListeners() {
     helper!.addSipUaHelperListener(this);
@@ -273,7 +311,9 @@ class _MyDialPadWidget extends State<DialPadWidget>
             PopupMenuButton<String>(
                 onSelected: (String value) {
                   switch (value) {
-                    case 'account':
+                    case 'logout':
+                      _preferences.clear();
+                      helper!.stop();
                       Navigator.pushNamed(context, '/register');
                       break;
                     case 'about':
@@ -292,17 +332,17 @@ class _MyDialPadWidget extends State<DialPadWidget>
                             Padding(
                               padding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
                               child: Icon(
-                                Icons.account_circle,
+                                Icons.logout,
                                 color: Colors.black38,
                               ),
                             ),
                             SizedBox(
-                              child: Text('Account'),
+                              child: Text('Logout'),
                               width: 64,
                             )
                           ],
                         ),
-                        value: 'account',
+                        value: 'logout',
                       ),
                       PopupMenuItem(
                         child: Row(
@@ -352,11 +392,6 @@ class _MyDialPadWidget extends State<DialPadWidget>
                     children: _buildDialPad(),
                   )),
                 ])));
-  }
-
-  @override
-  void registrationStateChanged(RegistrationState state) {
-    setState(() {});
   }
 
   @override

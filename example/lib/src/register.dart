@@ -75,7 +75,10 @@ class _MyRegisterWidget extends State<RegisterWidget>
     setState(() {
       _registerState = state;
     });
-    if (state.state == RegistrationStateEnum.REGISTERED) _saveSettings();
+    if (_registerState.state == RegistrationStateEnum.REGISTERED) {
+      _saveSettings();
+      Navigator.pushReplacementNamed(context, '/home');
+    }
   }
 
   void _alert(BuildContext context, String alertFieldName) {
@@ -127,6 +130,7 @@ class _MyRegisterWidget extends State<RegisterWidget>
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
+          automaticallyImplyLeading: false,
           title: Text("SIP Account"),
         ),
         body: Align(

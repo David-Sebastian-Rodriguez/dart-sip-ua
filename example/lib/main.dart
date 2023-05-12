@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart'
 import 'package:flutter/material.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:sip_ua/sip_ua.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'src/about.dart';
 import 'src/callscreen.dart';
@@ -22,8 +23,11 @@ typedef PageContentBuilder = Widget Function(
 // ignore: must_be_immutable
 class MyApp extends StatelessWidget {
   final SIPUAHelper _helper = SIPUAHelper();
+  late SharedPreferences _preferences;
+
   Map<String, PageContentBuilder> routes = {
-    '/': ([SIPUAHelper? helper, Object? arguments]) => DialPadWidget(helper),
+    '/home': ([SIPUAHelper? helper, Object? arguments]) =>
+        DialPadWidget(helper),
     '/register': ([SIPUAHelper? helper, Object? arguments]) =>
         RegisterWidget(helper),
     '/callscreen': ([SIPUAHelper? helper, Object? arguments]) =>
@@ -49,6 +53,17 @@ class MyApp extends StatelessWidget {
     return null;
   }
 
+  Future<String> initialRoute() async {
+    _preferences = await SharedPreferences.getInstance();
+    return validatePreference(_preferences) ? '/home' : '/register';
+  }
+
+  bool validatePreference(SharedPreferences preferences) {
+    return preferences.containsKey('ws_uri') &&
+        preferences.containsKey('password') &&
+        preferences.containsKey('auth_user');
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -58,8 +73,27 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
         fontFamily: 'Roboto',
       ),
-      initialRoute: '/register',
-      onGenerateRoute: _onGenerateRoute,
+      home: FutureBuilder<String>(
+        future: initialRoute(),
+        builder: (BuildContext context, AsyncSnapshot<String> snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            // Mientras el futuro está en progreso, puedes mostrar una pantalla de carga
+            return CircularProgressIndicator();
+          } else if (snapshot.hasError) {
+            // Si ocurre un error durante la obtención del futuro, puedes manejarlo aquí
+            return Navigator(
+              initialRoute: '/register',
+              onGenerateRoute: _onGenerateRoute,
+            );
+          } else {
+            // Una vez que el futuro se completa con éxito, puedes establecer la ruta inicial
+            return Navigator(
+              initialRoute: snapshot.data,
+              onGenerateRoute: _onGenerateRoute,
+            );
+          }
+        },
+      ),
     );
   }
 }
