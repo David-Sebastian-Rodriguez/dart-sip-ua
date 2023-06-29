@@ -6,15 +6,32 @@ import 'package:sip_ua/sip_ua.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'src/about.dart';
+import 'src/config.dart';
 import 'src/callscreen.dart';
 import 'src/dialpad.dart';
 import 'src/register.dart';
+import 'src/contacts.dart';
+import 'src/call_history.dart';
+import 'package:flutter/services.dart';
+
+bool showSplashScreen = true;
 
 void main() {
   if (WebRTC.platformIsDesktop) {
     debugDefaultTargetPlatformOverride = TargetPlatform.fuchsia;
   }
-  runApp(MyApp());
+  WidgetsFlutterBinding.ensureInitialized();
+  SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]).then((_) async {
+    // Muestra el splash screen durante 5 segundos
+    await Future.delayed(Duration(seconds: 5));
+
+    // Después de 5 segundos, establece showSplashScreen como falso
+    showSplashScreen = false;
+    runApp(MyApp());
+  });
 }
 
 typedef PageContentBuilder = Widget Function(
@@ -33,6 +50,11 @@ class MyApp extends StatelessWidget {
     '/callscreen': ([SIPUAHelper? helper, Object? arguments]) =>
         CallScreenWidget(helper, arguments as Call?),
     '/about': ([SIPUAHelper? helper, Object? arguments]) => AboutWidget(),
+    '/config': ([SIPUAHelper? helper, Object? arguments]) =>
+        ConfiguracionWidget(),
+    '/contacts': ([SIPUAHelper? helper, Object? arguments]) => Contacts(helper),
+    '/call_history': ([SIPUAHelper? helper, Object? arguments]) =>
+        CallHistory(helper),
   };
 
   Route<dynamic>? _onGenerateRoute(RouteSettings settings) {
@@ -55,41 +77,85 @@ class MyApp extends StatelessWidget {
 
   Future<String> initialRoute() async {
     _preferences = await SharedPreferences.getInstance();
-    return validatePreference(_preferences) ? '/home' : '/register';
+
+    // Esperar hasta que se cumplan los 5 segundos o hasta que se obtenga la respuesta
+    await Future.wait([
+      Future.delayed(Duration(seconds: 5)),
+      Future.value(validatePreference(_preferences)),
+    ]);
+
+    // Comprobar si se obtuvo la respuesta antes de los 5 segundos
+    if (validatePreference(_preferences)) {
+      return '/home';
+    } else {
+      return '/register';
+    }
   }
 
   bool validatePreference(SharedPreferences preferences) {
-    return preferences.containsKey('ws_uri') &&
+    return preferences.containsKey('dominio') &&
         preferences.containsKey('password') &&
-        preferences.containsKey('auth_user');
+        preferences.containsKey('extension');
   }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Yaco Test',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        primarySwatch: Colors.red,
         fontFamily: 'Roboto',
       ),
       home: FutureBuilder<String>(
         future: initialRoute(),
         builder: (BuildContext context, AsyncSnapshot<String> snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            // Mientras el futuro está en progreso, puedes mostrar una pantalla de carga
-            return CircularProgressIndicator();
+            // Mientras el futuro está en progreso, muestra una pantalla de carga
+            //return CircularProgressIndicator();
+            return Scaffold(
+              body: Image.asset(
+                'assets/images/splash_bg.webp',
+                fit: BoxFit.cover,
+              ),
+            );
           } else if (snapshot.hasError) {
-            // Si ocurre un error durante la obtención del futuro, puedes manejarlo aquí
+            // Si ocurre un error durante la obtención del futuro envia a register
             return Navigator(
               initialRoute: '/register',
               onGenerateRoute: _onGenerateRoute,
             );
           } else {
-            // Una vez que el futuro se completa con éxito, puedes establecer la ruta inicial
-            return Navigator(
-              initialRoute: snapshot.data,
-              onGenerateRoute: _onGenerateRoute,
+            // Una vez que el futuro se completa con éxito establece la ruta inicial
+            return WillPopScope(
+              onWillPop: () async {
+                // Muestra una ventana emergente de confirmación
+                bool confirmExit = await showDialog(
+                  context: context,
+                  builder: (BuildContext context) => AlertDialog(
+                    title: Text('Cerrar aplicación'),
+                    content: Text(
+                        '¿Estás seguro de que deseas cerrar la aplicación?'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(false),
+                        child: Text('Cancelar'),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(true),
+                        child: Text('Aceptar'),
+                      ),
+                    ],
+                  ),
+                );
+
+                // Si confirmExit es verdadero, se cierra la aplicación
+                return confirmExit;
+              },
+              child: Navigator(
+                initialRoute: snapshot.data,
+                onGenerateRoute: _onGenerateRoute,
+              ),
             );
           }
         },

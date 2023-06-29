@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:sip_ua/sip_ua.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:audioplayers/audioplayers.dart';
 
 import 'widgets/action_button.dart';
 
@@ -36,6 +38,9 @@ class _MyCallScreenWidget extends State<CallScreenWidget>
   CallStateEnum _state = CallStateEnum.NONE;
   SIPUAHelper? get helper => widget._helper;
 
+  AudioCache audioCache = AudioCache();
+  AudioPlayer player = AudioPlayer();
+
   bool get voiceOnly =>
       (_localStream == null || _localStream!.getVideoTracks().isEmpty) &&
       (_remoteStream == null || _remoteStream!.getVideoTracks().isEmpty);
@@ -46,12 +51,17 @@ class _MyCallScreenWidget extends State<CallScreenWidget>
 
   Call? get call => widget._call;
 
+  String? get id => call!.id;
+
+  bool isFirstCalling = true;
+
   @override
   initState() {
     super.initState();
     _initRenderers();
     helper!.addSipUaHelperListener(this);
     _startTimer();
+    isFirstCalling = true;
     //_showIncomingCallNotification();
   }
 
@@ -60,6 +70,27 @@ class _MyCallScreenWidget extends State<CallScreenWidget>
     super.deactivate();
     helper!.removeSipUaHelperListener(this);
     _disposeRenderers();
+  }
+
+  void saveCallHistory(String phoneNumber, bool isCallIn) async {
+    if (!isFirstCalling) {
+      return;
+    } else {
+      isFirstCalling = false;
+    }
+
+    if (isCallIn) {
+      playSound();
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    final extension = prefs.getString('extension');
+    final callHistory = prefs.getStringList('call_history_$extension') ?? [];
+
+    callHistory.add(
+        '$phoneNumber,${isCallIn ? 'Llamada entrante' : 'Llamada saliente'},${DateTime.now()}');
+
+    await prefs.setStringList('call_history_$extension', callHistory);
   }
 
   void _startTimer() {
@@ -95,6 +126,14 @@ class _MyCallScreenWidget extends State<CallScreenWidget>
       _remoteRenderer!.dispose();
       _remoteRenderer = null;
     }
+  }
+
+  void playSound() async {
+    player = await audioCache.loop('sounds/call_sound.mp3');
+  }
+
+  void stopSound() {
+    player.stop();
   }
 
   @override
@@ -166,6 +205,7 @@ class _MyCallScreenWidget extends State<CallScreenWidget>
   void _backToDialPad() {
     _timer.cancel();
     Timer(Duration(seconds: 2), () {
+      stopSound();
       Navigator.of(context).pop();
     });
     _cleanUp();
@@ -213,6 +253,7 @@ class _MyCallScreenWidget extends State<CallScreenWidget>
   }
 
   void _handleAccept() async {
+    stopSound();
     bool remoteHasVideo = call!.remote_has_video;
     final mediaConstraints = <String, dynamic>{
       'audio': true,
@@ -350,18 +391,24 @@ class _MyCallScreenWidget extends State<CallScreenWidget>
     ];
 
     return labels
-        .map((row) => Padding(
+        .map(
+          (row) => Padding(
             padding: const EdgeInsets.all(3),
             child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: row
-                    .map((label) => ActionButton(
-                          title: label.keys.first,
-                          subTitle: label.values.first,
-                          onPressed: () => _handleDtmf(label.keys.first),
-                          number: true,
-                        ))
-                    .toList())))
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: row
+                  .map(
+                    (label) => ActionButton(
+                      title: label.keys.first,
+                      subTitle: label.values.first,
+                      onPressed: () => _handleDtmf(label.keys.first),
+                      number: true,
+                    ),
+                  )
+                  .toList(),
+            ),
+          ),
+        )
         .toList();
   }
 
@@ -397,72 +444,88 @@ class _MyCallScreenWidget extends State<CallScreenWidget>
         } else {
           basicActions.add(hangupBtn);
         }
+        saveCallHistory(remoteIdentity!, direction == 'INCOMING');
         break;
       case CallStateEnum.ACCEPTED:
       case CallStateEnum.CONFIRMED:
         {
-          advanceActions.add(ActionButton(
-            title: _audioMuted ? 'unmute' : 'mute',
-            icon: _audioMuted ? Icons.mic_off : Icons.mic,
-            checked: _audioMuted,
-            onPressed: () => _muteAudio(),
-          ));
+          advanceActions.add(
+            ActionButton(
+              title: _audioMuted ? 'unmute' : 'mute',
+              icon: _audioMuted ? Icons.mic_off : Icons.mic,
+              checked: _audioMuted,
+              onPressed: () => _muteAudio(),
+            ),
+          );
 
-          if (voiceOnly) {
-            advanceActions.add(ActionButton(
-              title: "keypad",
-              icon: Icons.dialpad,
-              onPressed: () => _handleKeyPad(),
-            ));
-          } else {
-            advanceActions.add(ActionButton(
-              title: "switch camera",
-              icon: Icons.switch_video,
-              onPressed: () => _switchCamera(),
-            ));
-          }
-
-          if (voiceOnly) {
-            advanceActions.add(ActionButton(
+          advanceActions.add(
+            ActionButton(
               title: _speakerOn ? 'speaker off' : 'speaker on',
               icon: _speakerOn ? Icons.volume_off : Icons.volume_up,
               checked: _speakerOn,
               onPressed: () => _toggleSpeaker(),
-            ));
+            ),
+          );
+
+          if (voiceOnly) {
+            advanceActions.add(
+              ActionButton(
+                title: "keypad",
+                icon: Icons.dialpad,
+                onPressed: () => _handleKeyPad(),
+              ),
+            );
           } else {
-            advanceActions.add(ActionButton(
-              title: _videoMuted ? "camera on" : 'camera off',
-              icon: _videoMuted ? Icons.videocam : Icons.videocam_off,
-              checked: _videoMuted,
-              onPressed: () => _muteVideo(),
-            ));
+            advanceActions.add(
+              ActionButton(
+                title: "switch",
+                icon: Icons.switch_video,
+                onPressed: () => _switchCamera(),
+              ),
+            );
+
+            advanceActions.add(
+              ActionButton(
+                title: _videoMuted ? "camera on" : 'camera off',
+                icon: _videoMuted ? Icons.videocam : Icons.videocam_off,
+                checked: _videoMuted,
+                onPressed: () => _muteVideo(),
+              ),
+            );
           }
 
-          basicActions.add(ActionButton(
-            title: _hold ? 'unhold' : 'hold',
-            icon: _hold ? Icons.play_arrow : Icons.pause,
-            checked: _hold,
-            onPressed: () => _handleHold(),
-          ));
+          basicActions.add(
+            ActionButton(
+              title: _hold ? 'unhold' : 'hold',
+              icon: _hold ? Icons.play_arrow : Icons.pause,
+              checked: _hold,
+              onPressed: () => _handleHold(),
+            ),
+          );
 
           basicActions.add(hangupBtn);
 
           if (_showNumPad) {
-            basicActions.add(ActionButton(
-              title: "back",
-              icon: Icons.keyboard_arrow_down,
-              onPressed: () => _handleKeyPad(),
-            ));
+            basicActions.add(
+              ActionButton(
+                title: "back",
+                icon: Icons.keyboard_arrow_down,
+                onPressed: () => _handleKeyPad(),
+              ),
+            );
           } else {
-            basicActions.add(ActionButton(
-              title: "transfer",
-              icon: Icons.phone_forwarded,
-              onPressed: () => _handleTransfer(),
-            ));
+            basicActions.add(
+              ActionButton(
+                title: "transfer",
+                icon: Icons.phone_forwarded,
+                onPressed: () => _handleTransfer(),
+              ),
+            );
           }
         }
         break;
       case CallStateEnum.FAILED:
+        break;
       case CallStateEnum.ENDED:
         basicActions.add(hangupBtnInactive);
         break;
@@ -480,24 +543,33 @@ class _MyCallScreenWidget extends State<CallScreenWidget>
       actionWidgets.addAll(_buildNumPad());
     } else {
       if (advanceActions.isNotEmpty) {
-        actionWidgets.add(Padding(
-            padding: const EdgeInsets.all(3),
+        actionWidgets.add(
+          Padding(
+            padding: const EdgeInsets.all(0),
             child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: advanceActions)));
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: advanceActions,
+            ),
+          ),
+        );
       }
     }
 
-    actionWidgets.add(Padding(
-        padding: const EdgeInsets.all(3),
+    actionWidgets.add(
+      Padding(
+        padding: const EdgeInsets.all(0),
         child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: basicActions)));
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: basicActions,
+        ),
+      ),
+    );
 
     return Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: actionWidgets);
+      crossAxisAlignment: CrossAxisAlignment.center,
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: actionWidgets,
+    );
   }
 
   Widget _buildContent() {
@@ -523,61 +595,76 @@ class _MyCallScreenWidget extends State<CallScreenWidget>
       ));
     }
 
-    stackWidgets.addAll([
-      Positioned(
-        top: voiceOnly ? 48 : 6,
-        left: 0,
-        right: 0,
-        child: Center(
+    stackWidgets.addAll(
+      [
+        Positioned(
+          top: voiceOnly ? 48 : 6,
+          left: 0,
+          right: 0,
+          child: Center(
             child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Center(
-                child: Padding(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                Center(
+                  child: Padding(
                     padding: const EdgeInsets.all(6),
-                    child: Text(
-                      (voiceOnly ? 'VOICE CALL' : 'VIDEO CALL') +
-                          (_hold
-                              ? ' PAUSED BY ${_holdOriginator!.toUpperCase()}'
-                              : ''),
-                      style: TextStyle(fontSize: 24, color: Colors.black54),
-                    ))),
-            Center(
-                child: Padding(
+                    child: Padding(
+                      padding: EdgeInsets.only(top: 30),
+                      child: Text(
+                        (voiceOnly ? 'VOICE CALL' : 'VIDEO CALL') +
+                            (_hold
+                                ? ' PAUSED BY ${_holdOriginator!.toUpperCase()}'
+                                : ''),
+                        style: TextStyle(fontSize: 24, color: Colors.white),
+                      ),
+                    ),
+                  ),
+                ),
+                Center(
+                  child: Padding(
                     padding: const EdgeInsets.all(6),
                     child: Text(
                       '$remoteIdentity',
-                      style: TextStyle(fontSize: 18, color: Colors.black54),
-                    ))),
-            Center(
-                child: Padding(
-                    padding: const EdgeInsets.all(6),
-                    child: Text(_timeLabel,
-                        style: TextStyle(fontSize: 14, color: Colors.black54))))
-          ],
-        )),
-      ),
-    ]);
+                      style: TextStyle(fontSize: 18, color: Colors.white),
+                    ),
+                  ),
+                ),
+                Center(
+                    child: Padding(
+                        padding: const EdgeInsets.all(6),
+                        child: Text(_timeLabel,
+                            style:
+                                TextStyle(fontSize: 14, color: Colors.white))))
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
 
-    return Stack(
-      children: stackWidgets,
+    return Container(
+      color: Colors.black87, // Establece el color de fondo negro
+      child: Stack(
+        children: stackWidgets,
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-            automaticallyImplyLeading: false,
-            title: Text('[$direction] ${EnumHelper.getName(_state)}')),
-        body: Container(
-          child: _buildContent(),
+      body: Container(
+        child: _buildContent(),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      floatingActionButton: Padding(
+        padding: EdgeInsets.fromLTRB(0.0, 0.0, 0.0, 0.0),
+        child: Container(
+          child: _buildActionButtons(),
         ),
-        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-        floatingActionButton: Padding(
-            padding: EdgeInsets.fromLTRB(0.0, 0.0, 0.0, 24.0),
-            child: Container(width: 320, child: _buildActionButtons())));
+      ),
+    );
   }
 
   @override

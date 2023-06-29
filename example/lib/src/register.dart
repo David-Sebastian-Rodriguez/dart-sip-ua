@@ -12,9 +12,8 @@ class RegisterWidget extends StatefulWidget {
 class _MyRegisterWidget extends State<RegisterWidget>
     implements SipUaHelperListener {
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _wsUriController = TextEditingController();
-  final TextEditingController _authorizationUserController =
-      TextEditingController();
+  final TextEditingController _domainController = TextEditingController();
+  final TextEditingController _extensionController = TextEditingController();
   final Map<String, String> _wsExtraHeaders = {
     // 'Origin': ' https://tryit.jssip.net',
     // 'Host': 'tryit.jssip.net:10443'
@@ -46,28 +45,27 @@ class _MyRegisterWidget extends State<RegisterWidget>
     // codigo para hacer que al inicio se borren los datos guardados de autenticacion
     //_preferences.clear();
     setState(() {
-      _wsUriController.text =
-          _preferences.getString('ws_uri') ?? 'wss://yaco.calltechsa.com:8534';
+      _domainController.text =
+          _preferences.getString('dominio') ?? 'yaco.calltechsa.com';
       _passwordController.text =
           _preferences.getString('password') ?? 'Ext${extencion}Calltech*';
-      _authorizationUserController.text =
-          _preferences.getString('auth_user') ?? extencion;
+      _extensionController.text =
+          _preferences.getString('extension') ?? extencion;
     });
-    print(validatePreference(_preferences));
     if (validatePreference(_preferences) &&
         _registerState.state != RegistrationStateEnum.REGISTERED) _sendAuth();
   }
 
   bool validatePreference(SharedPreferences preferences) {
-    return preferences.containsKey('ws_uri') &&
+    return preferences.containsKey('dominio') &&
         preferences.containsKey('password') &&
-        preferences.containsKey('auth_user');
+        preferences.containsKey('extension');
   }
 
   void _saveSettings() {
-    _preferences.setString('ws_uri', _wsUriController.text);
+    _preferences.setString('dominio', _domainController.text);
     _preferences.setString('password', _passwordController.text);
-    _preferences.setString('auth_user', _authorizationUserController.text);
+    _preferences.setString('extension', _extensionController.text);
   }
 
   @override
@@ -87,8 +85,8 @@ class _MyRegisterWidget extends State<RegisterWidget>
       barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('$alertFieldName is empty'),
-          content: Text('Please enter $alertFieldName!'),
+          title: Text('$alertFieldName esta vacio'),
+          content: Text('Por favor ingrese $alertFieldName!'),
           actions: <Widget>[
             TextButton(
               child: Text('Ok'),
@@ -103,22 +101,27 @@ class _MyRegisterWidget extends State<RegisterWidget>
   }
 
   void _handleSave(BuildContext context) {
-    if (_wsUriController.text == '') {
-      _alert(context, "WebSocket URL");
+    if (_domainController.text == '') {
+      _alert(context, "Dominio");
+    } else if (_passwordController.text == '') {
+      _alert(context, "Contraseña");
+    } else if (_extensionController.text == '') {
+      _alert(context, "Extensión");
+    } else {
+      _sendAuth();
     }
-    _sendAuth();
   }
 
   void _sendAuth() {
     UaSettings settings = UaSettings();
 
-    settings.webSocketUrl = _wsUriController.text;
+    settings.webSocketUrl = 'wss://${_domainController.text}:8534';
     settings.webSocketSettings.extraHeaders = _wsExtraHeaders;
     settings.webSocketSettings.allowBadCertificate = true;
     //settings.webSocketSettings.userAgent = 'Dart/2.8 (dart:io) for OpenSIPS.';
 
-    settings.uri = 'sip:${_authorizationUserController.text}@143.244.209.136';
-    settings.authorizationUser = _authorizationUserController.text;
+    settings.uri = 'sip:${_extensionController.text}@143.244.209.136';
+    settings.authorizationUser = _extensionController.text;
     settings.password = _passwordController.text;
     settings.userAgent = 'Dart SIP Client v1.0.0';
     settings.dtmfMode = DtmfMode.RFC2833;
@@ -129,120 +132,156 @@ class _MyRegisterWidget extends State<RegisterWidget>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
+      /* appBar: AppBar(
           automaticallyImplyLeading: false,
           title: Text("SIP Account"),
-        ),
-        body: Align(
+        ), */
+      body: Container(
+        color: Colors.black87,
+        child: DefaultTextStyle(
+          style: TextStyle(color: Colors.white),
+          child: Align(
             alignment: Alignment(0, 0),
             child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: <Widget>[
-                  Column(
-                    children: <Widget>[
-                      Padding(
-                        padding:
-                            const EdgeInsets.fromLTRB(48.0, 18.0, 48.0, 18.0),
-                        child: Center(
-                            child: Text(
-                          'Register Status: ${EnumHelper.getName(_registerState.state)}',
-                          style: TextStyle(fontSize: 18, color: Colors.black54),
-                        )),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(48.0, 18.0, 48.0, 0),
-                        child: Align(
-                          child: Text('WebSocket:'),
-                          alignment: Alignment.centerLeft,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: <Widget>[
+                Column(
+                  children: <Widget>[
+                    Padding(
+                      padding:
+                          const EdgeInsets.fromLTRB(48.0, 150.0, 48.0, 50.0),
+                      child: Center(
+                        child: Image.asset(
+                          'assets/images/company_logo.webp',
+                          width: 250,
                         ),
                       ),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(48.0, 0.0, 48.0, 0),
-                        child: TextFormField(
-                          controller: _wsUriController,
-                          keyboardType: TextInputType.text,
-                          textAlign: TextAlign.center,
-                          decoration: InputDecoration(
-                            contentPadding: EdgeInsets.all(10.0),
-                            border: UnderlineInputBorder(
-                                borderSide: BorderSide(color: Colors.black12)),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(48.0, 25.0, 48.0, 0),
+                      child: TextFormField(
+                        controller: _domainController,
+                        keyboardType: TextInputType.text,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.white70),
+                        decoration: InputDecoration(
+                          hintText: 'Dominio',
+                          hintStyle: TextStyle(color: Colors.white70),
+                          enabledBorder: UnderlineInputBorder(
+                            borderSide: BorderSide(
+                                color: Color.fromRGBO(255, 255, 255,
+                                    0.702)), // Color de la línea inferior deseado
+                          ),
+                          contentPadding: EdgeInsets.all(
+                            10.0,
+                          ),
+                          border: UnderlineInputBorder(
+                            borderSide: BorderSide(
+                              color: Colors.white,
+                            ),
                           ),
                         ),
                       ),
-                    ],
+                    ),
+                  ],
+                ),
+                Column(
+                  children: <Widget>[
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        48.0,
+                        50.0,
+                        48.0,
+                        0,
+                      ),
+                      child: TextFormField(
+                        controller: _extensionController,
+                        keyboardType: TextInputType.text,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.white70,
+                        ),
+                        decoration: InputDecoration(
+                          hintText: 'Extensión',
+                          hintStyle: TextStyle(
+                            color: Colors.white70,
+                          ),
+                          enabledBorder: UnderlineInputBorder(
+                            borderSide: BorderSide(
+                              color: Colors.white70,
+                            ), // Color de la línea inferior deseado
+                          ),
+                          contentPadding: EdgeInsets.all(
+                            10.0,
+                          ),
+                          border: UnderlineInputBorder(
+                            borderSide: BorderSide(
+                              color: Colors.white30,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                Column(
+                  children: <Widget>[
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        48.0,
+                        50.0,
+                        48.0,
+                        0,
+                      ),
+                      child: TextFormField(
+                        controller: _passwordController,
+                        keyboardType: TextInputType.text,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.white70,
+                        ),
+                        decoration: InputDecoration(
+                          hintText: 'Contraseña',
+                          hintStyle: TextStyle(
+                            color: Colors.white70,
+                          ),
+                          enabledBorder: UnderlineInputBorder(
+                            borderSide: BorderSide(
+                              color: Colors.white70,
+                            ), // Color de la línea inferior deseado
+                          ),
+                          contentPadding: EdgeInsets.all(10.0),
+                          border: UnderlineInputBorder(
+                            borderSide: BorderSide(color: Colors.red),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(0.0, 50.0, 0.0, 0.0),
+                  child: Container(
+                    height: 48.0,
+                    width: 160.0,
+                    child: MaterialButton(
+                      child: Text(
+                        'Register',
+                        style: TextStyle(fontSize: 16.0, color: Colors.white),
+                      ),
+                      color: Colors.white24,
+                      textColor: Colors.white30,
+                      onPressed: () => _handleSave(context),
+                    ),
                   ),
-                  Column(
-                    children: <Widget>[
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(46.0, 18.0, 48.0, 0),
-                        child: Align(
-                          child: Text('Authorization User:'),
-                          alignment: Alignment.centerLeft,
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(48.0, 0.0, 48.0, 0),
-                        child: TextFormField(
-                          controller: _authorizationUserController,
-                          keyboardType: TextInputType.text,
-                          textAlign: TextAlign.center,
-                          decoration: InputDecoration(
-                            contentPadding: EdgeInsets.all(10.0),
-                            border: UnderlineInputBorder(
-                                borderSide: BorderSide(color: Colors.black12)),
-                            hintText: _authorizationUserController.text.isEmpty
-                                ? '[Empty]'
-                                : null,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  Column(
-                    children: <Widget>[
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(46.0, 18.0, 48.0, 0),
-                        child: Align(
-                          child: Text('Password:'),
-                          alignment: Alignment.centerLeft,
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(48.0, 0.0, 48.0, 0),
-                        child: TextFormField(
-                          controller: _passwordController,
-                          keyboardType: TextInputType.text,
-                          textAlign: TextAlign.center,
-                          decoration: InputDecoration(
-                            contentPadding: EdgeInsets.all(10.0),
-                            border: UnderlineInputBorder(
-                                borderSide: BorderSide(color: Colors.black12)),
-                            hintText: _passwordController.text.isEmpty
-                                ? '[Empty]'
-                                : null,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  Padding(
-                      padding: const EdgeInsets.fromLTRB(0.0, 18.0, 0.0, 0.0),
-                      child: Container(
-                        height: 48.0,
-                        width: 160.0,
-                        child: MaterialButton(
-                          child: Text(
-                            'Register',
-                            style:
-                                TextStyle(fontSize: 16.0, color: Colors.white),
-                          ),
-                          color: Colors.blue,
-                          textColor: Colors.white,
-                          onPressed: () => _handleSave(context),
-                        ),
-                      ))
-                ])));
+                )
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   @override

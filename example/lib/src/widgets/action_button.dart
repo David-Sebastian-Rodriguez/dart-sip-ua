@@ -35,45 +35,51 @@ class _ActionButtonState extends State<ActionButton> {
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
         GestureDetector(
-            onLongPress: widget.onLongPress,
-            onTap: widget.onPressed,
-            child: RawMaterialButton(
-              onPressed: widget.onPressed,
-              splashColor: widget.fillColor ??
-                  (widget.checked ? Colors.white : Colors.blue),
-              fillColor: widget.fillColor ??
-                  (widget.checked ? Colors.blue : Colors.white),
-              elevation: 10.0,
-              shape: CircleBorder(),
-              child: Padding(
-                padding: const EdgeInsets.all(15.0),
-                child: widget.number
-                    ? Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: <Widget>[
-                            Text('${widget.title}',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  color: widget.fillColor ?? Colors.grey[500],
-                                )),
-                            Text(widget.subTitle.toUpperCase(),
-                                style: TextStyle(
-                                  fontSize: 8,
-                                  color: widget.fillColor ?? Colors.grey[500],
-                                ))
-                          ])
-                    : Icon(
-                        widget.icon,
-                        size: 30.0,
-                        color: widget.fillColor != null
-                            ? Colors.white
-                            : (widget.checked ? Colors.white : Colors.blue),
-                      ),
-              ),
-            )),
+          onLongPress: widget.onLongPress,
+          onTap: widget.onPressed,
+          child: RawMaterialButton(
+            onPressed: widget.onPressed,
+            splashColor: widget.fillColor ??
+                (widget.checked ? Colors.white : Colors.red),
+            fillColor: widget.fillColor ??
+                (widget.checked ? Colors.red : Colors.white),
+            elevation: 10.0,
+            shape: CircleBorder(),
+            child: Padding(
+              padding: const EdgeInsets.all(15.0),
+              child: widget.number
+                  ? Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: <Widget>[
+                          Text(
+                            '${widget.title}',
+                            style: TextStyle(
+                              fontSize: 18,
+                              color: widget.fillColor ?? Colors.black,
+                            ),
+                          ),
+                          Text(
+                            widget.subTitle.toUpperCase(),
+                            style: TextStyle(
+                              fontSize: 8,
+                              color: widget.fillColor ?? Colors.black,
+                            ),
+                          ),
+                        ])
+                  : Icon(
+                      widget.icon,
+                      size: 30.0,
+                      color: widget.fillColor != null
+                          ? Colors.white
+                          : (widget.checked ? Colors.white : Colors.red),
+                    ),
+            ),
+          ),
+        ),
         widget.number
             ? Container(
-                margin: EdgeInsets.symmetric(vertical: 4.0, horizontal: 2.0))
+                margin: EdgeInsets.symmetric(vertical: 4.0, horizontal: 2.0),
+              )
             : Container(
                 margin: EdgeInsets.symmetric(vertical: 10.0, horizontal: 2.0),
                 child: (widget.number || widget.title == null)
@@ -85,7 +91,7 @@ class _ActionButtonState extends State<ActionButton> {
                           color: widget.fillColor ?? Colors.grey[500],
                         ),
                       ),
-              )
+              ),
       ],
     );
   }

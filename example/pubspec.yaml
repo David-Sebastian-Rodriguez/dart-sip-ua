@@ -28,7 +28,10 @@ dependencies:
   sip_ua:
     path: ../
   shared_preferences: ^2.0.5
-  permission_handler: ^9.2.0
+  permission_handler: ^10.2.0
+  contacts_service: ^0.6.3
+  audioplayers: ^0.20.1
+  shimmer: ^3.0.0
 
 dev_dependencies:
   flutter_test:
@@ -48,6 +51,9 @@ flutter:
   # assets:
   #  - images/a_dot_burr.jpeg
   #  - images/a_dot_ham.jpeg
+  assets:
+    - assets/images/
+    - assets/sounds/
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware.
   # For details regarding adding assets from package dependencies, see

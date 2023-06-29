@@ -9,6 +9,8 @@ import 'widgets/action_button.dart';
 
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
+import 'package:audioplayers/audioplayers.dart';
+
 class DialPadWidget extends StatefulWidget {
   final SIPUAHelper? _helper;
   DialPadWidget(this._helper, {Key? key}) : super(key: key);
@@ -20,9 +22,12 @@ class _MyDialPadWidget extends State<DialPadWidget>
     with WidgetsBindingObserver
     implements SipUaHelperListener {
   String? _dest;
+  String? _ext;
   SIPUAHelper? get helper => widget._helper;
   TextEditingController? _textController;
   late SharedPreferences _preferences;
+  bool _preferencesInitialized = false;
+  bool idiomEs = true;
 
   late String _wsUriController;
   late String _passwordController;
@@ -43,6 +48,9 @@ class _MyDialPadWidget extends State<DialPadWidget>
 
   AppLifecycleState? _appState;
   late RegistrationState _registerState;
+
+  AudioCache audioCache = AudioCache();
+  AudioPlayer player = AudioPlayer();
 
   @override
   initState() {
@@ -69,41 +77,73 @@ class _MyDialPadWidget extends State<DialPadWidget>
     // These are the callbacks
     switch (state) {
       case AppLifecycleState.resumed:
-        // widget is resumed
+        //print('resume....');
+        if (player.state == PlayerState.PLAYING) {
+          stopSound();
+        }
         _appState = state;
         break;
       case AppLifecycleState.inactive:
         // widget is inactive
+        //print('inactive....');
+        _appState = state;
         break;
       case AppLifecycleState.paused:
         // widget is paused
         _appState = state;
+        //print('paused....');
         break;
       case AppLifecycleState.detached:
         // widget is detached
+        _appState = state;
+        //print('detaches....');
         break;
     }
   }
 
-  void _loadSettings() async {
+  Future<void> _loadSettings() async {
     _preferences = await SharedPreferences.getInstance();
     _registerState = helper!.registerState;
+    _preferencesInitialized = true;
     if (_registerState.state != RegistrationStateEnum.REGISTERED) {
       _sendAuth();
     }
     _dest = _preferences.getString('dest') ?? '8888';
+    _ext = _preferences.getString('extension') ?? 'None';
     _textController = TextEditingController(text: _dest);
     _textController!.text = _dest!;
+
+    if (!_preferences.containsKey('lang')) {
+      _preferences.setString('lang', 'es');
+    }
 
     setState(() {});
   }
 
+  void isEs() {
+    if (_preferencesInitialized == false) {
+      idiomEs = true;
+    } else {
+      idiomEs = _preferences.getString('lang') == 'es';
+    }
+
+    setState(() {});
+  }
+
+  Future<void> _cleanAuth() async {
+    await _preferences.remove('dominio');
+    await _preferences.remove('password');
+    await _preferences.remove('extension');
+  }
+
   void _sendAuth() {
-    setState(() {
-      _wsUriController = _preferences.getString('ws_uri')!;
-      _passwordController = _preferences.getString('password')!;
-      _authorizationUserController = _preferences.getString('auth_user')!;
-    });
+    setState(
+      () {
+        _wsUriController = 'wss://${_preferences.getString('dominio')}:8534';
+        _passwordController = _preferences.getString('password')!;
+        _authorizationUserController = _preferences.getString('extension')!;
+      },
+    );
 
     final Map<String, String> _wsExtraHeaders = {
       // 'Origin': ' https://tryit.jssip.net',
@@ -126,11 +166,21 @@ class _MyDialPadWidget extends State<DialPadWidget>
     helper!.start(settings);
   }
 
+  void playSound() async {
+    player = await audioCache.loop('sounds/call_sound.mp3');
+  }
+
+  void stopSound() {
+    player.stop();
+  }
+
   @override
   void registrationStateChanged(RegistrationState state) {
-    setState(() {
-      _registerState = state;
-    });
+    setState(
+      () {
+        _registerState = state;
+      },
+    );
     if (_registerState.state != RegistrationStateEnum.REGISTERED) {
       //Codigo en caso de que el registro falle
     }
@@ -154,17 +204,15 @@ class _MyDialPadWidget extends State<DialPadWidget>
         barrierDismissible: false,
         builder: (BuildContext context) {
           return AlertDialog(
-            title: Text('Target is empty.'),
-            content: Text('Please enter a SIP URI or username!'),
-            actions: <Widget>[
-              TextButton(
-                child: Text('Ok'),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-              ),
-            ],
-          );
+              title: Text('Target is empty.'),
+              content: Text('Please enter a SIP URI or username!'),
+              actions: <Widget>[
+                TextButton(
+                    child: Text('Ok'),
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    })
+              ]);
         },
       );
       return null;
@@ -188,17 +236,23 @@ class _MyDialPadWidget extends State<DialPadWidget>
 
     var destUri = 'sip:$dest@143.244.209.136';
 
-    helper!.call(destUri, voiceonly: voiceOnly, mediaStream: mediaStream);
+    helper!.call(
+      destUri,
+      voiceonly: voiceOnly,
+      mediaStream: mediaStream,
+    );
     return null;
   }
 
   void _handleBackSpace([bool deleteAll = false]) {
     var text = _textController!.text;
     if (text.isNotEmpty) {
-      setState(() {
-        text = deleteAll ? '' : text.substring(0, text.length - 1);
-        _textController!.text = text;
-      });
+      setState(
+        () {
+          text = deleteAll ? '' : text.substring(0, text.length - 1);
+          _textController!.text = text;
+        },
+      );
     }
   }
 
@@ -233,165 +287,215 @@ class _MyDialPadWidget extends State<DialPadWidget>
     ];
 
     return labels
-        .map((row) => Padding(
+        .map(
+          (row) => Padding(
             padding: const EdgeInsets.all(12),
             child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: row
-                    .map((label) => ActionButton(
-                          title: label.keys.first,
-                          subTitle: label.values.first,
-                          onPressed: () => _handleNum(label.keys.first),
-                          number: true,
-                        ))
-                    .toList())))
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: row
+                  .map(
+                    (label) => ActionButton(
+                      title: label.keys.first,
+                      subTitle: label.values.first,
+                      onPressed: () => _handleNum(label.keys.first),
+                      number: true,
+                    ),
+                  )
+                  .toList(),
+            ),
+          ),
+        )
         .toList();
   }
 
   List<Widget> _buildDialPad() {
     return [
       Container(
-          width: 360,
+        width: 360,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Container(
+              width: 360,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white10,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                padding: EdgeInsets.all(10.0),
+                margin: EdgeInsets.symmetric(vertical: 30),
+                child: Text(
+                  _textController?.text.toString() ?? '',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 40,
+                    color: Colors.white,
+                  ),
+                ),
+                /* child: TextField(
+                  keyboardType: TextInputType.text,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 24, color: Colors.white),
+                  decoration: InputDecoration(border: InputBorder.none),
+                  controller: _textController,
+                ), */
+              ),
+            ),
+          ],
+        ),
+      ),
+      Container(
+        width: 300,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: _buildNumPad(),
+        ),
+      ),
+      Container(
+        width: 300,
+        child: Padding(
+          padding: const EdgeInsets.all(12),
           child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                Container(
-                    width: 360,
-                    child: TextField(
-                      keyboardType: TextInputType.text,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 24, color: Colors.black54),
-                      decoration: InputDecoration(
-                        border: InputBorder.none,
-                      ),
-                      controller: _textController,
-                    )),
-              ])),
-      Container(
-          width: 300,
-          child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: _buildNumPad())),
-      Container(
-          width: 300,
-          child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: <Widget>[
-                  ActionButton(
-                    icon: Icons.videocam,
-                    onPressed: () => _handleCall(context),
-                  ),
-                  ActionButton(
-                    icon: Icons.dialer_sip,
-                    fillColor: Colors.green,
-                    onPressed: () => _handleCall(context, true),
-                  ),
-                  ActionButton(
-                    icon: Icons.keyboard_arrow_left,
-                    onPressed: () => _handleBackSpace(),
-                    onLongPress: () => _handleBackSpace(true),
-                  ),
-                ],
-              )))
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: <Widget>[
+              ActionButton(
+                  icon: Icons.videocam,
+                  fillColor: Colors.green,
+                  onPressed: () => _handleCall(context)),
+              ActionButton(
+                icon: Icons.dialer_sip,
+                fillColor: Colors.green,
+                onPressed: () => _handleCall(context, true),
+              ),
+              ActionButton(
+                icon: Icons.keyboard_arrow_left,
+                fillColor: Colors.red,
+                onPressed: () => _handleBackSpace(),
+                onLongPress: () => _handleBackSpace(true),
+              ),
+            ],
+          ),
+        ),
+      )
     ];
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          automaticallyImplyLeading: false,
-          title: Text("Dart SIP UA Demo"),
-          actions: <Widget>[
-            PopupMenuButton<String>(
-                onSelected: (String value) {
-                  switch (value) {
-                    case 'logout':
-                      _preferences.clear();
-                      helper!.stop();
-                      Navigator.pushNamed(context, '/register');
-                      break;
-                    case 'about':
-                      Navigator.pushNamed(context, '/about');
-                      break;
-                    default:
-                      break;
-                  }
-                },
-                icon: Icon(Icons.menu),
-                itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-                      PopupMenuItem(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: <Widget>[
-                            Padding(
-                              padding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
-                              child: Icon(
-                                Icons.logout,
-                                color: Colors.black38,
-                              ),
-                            ),
-                            SizedBox(
-                              child: Text('Logout'),
-                              width: 64,
-                            )
-                          ],
-                        ),
-                        value: 'logout',
-                      ),
-                      PopupMenuItem(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: <Widget>[
-                            Icon(
-                              Icons.info,
-                              color: Colors.black38,
-                            ),
-                            SizedBox(
-                              child: Text('About'),
-                              width: 64,
-                            )
-                          ],
-                        ),
-                        value: 'about',
-                      )
-                    ]),
+      appBar: AppBar(
+        backgroundColor: Colors.black87,
+        title: Text(
+          idiomEs ? "Marcador" : "Dialer",
+          style: TextStyle(color: Colors.white),
+        ),
+      ),
+      drawer: Drawer(
+        backgroundColor: Colors.red,
+        child: ListView(
+          children: [
+            UserAccountsDrawerHeader(
+              accountName: Padding(
+                padding: EdgeInsets.only(top: 0.0, left: 15),
+                child: Text(
+                  _ext ?? '',
+                  style: TextStyle(fontSize: 25, color: Colors.white),
+                ),
+              ),
+              accountEmail: null,
+              currentAccountPicture: Padding(
+                padding: EdgeInsets.only(top: 0.0),
+                child: CircleAvatar(
+                  backgroundColor: Colors.white,
+                  backgroundImage: AssetImage('assets/images/avatar.png'),
+                  radius: 100,
+                ),
+              ),
+            ),
+            ListTile(
+              title: Text(
+                EnumHelper.getName(helper!.registerState.state),
+                style: TextStyle(color: Colors.white),
+              ),
+              leading: Image.asset(
+                helper!.registerState.state == RegistrationStateEnum.REGISTERED
+                    ? 'assets/images/led_connected.png'
+                    : 'assets/images/led_disconnected.png',
+                width: 25,
+              ),
+              onTap: () {
+                _sendAuth();
+              },
+            ),
+            ListTile(
+                title: Text('Contactos', style: TextStyle(color: Colors.white)),
+                leading:
+                    Icon(Icons.contact_phone, color: Colors.white, size: 25),
+                onTap: () {
+                  Navigator.pushNamed(context, '/contacts');
+                }),
+            ListTile(
+              title: Text('Historial de llamadas',
+                  style: TextStyle(color: Colors.white)),
+              leading: Icon(Icons.history, color: Colors.white, size: 25),
+              onTap: () {
+                Navigator.pushNamed(context, '/call_history');
+              },
+            ),
+            ListTile(
+              title: Text('About', style: TextStyle(color: Colors.white)),
+              leading: Icon(Icons.info, color: Colors.white, size: 25),
+              onTap: () {
+                Navigator.pushNamed(context, '/about');
+              },
+            ),
+            ListTile(
+              title:
+                  Text('Configuración', style: TextStyle(color: Colors.white)),
+              leading: Icon(Icons.settings, color: Colors.white, size: 25),
+              onTap: () {
+                Navigator.pushNamed(context, '/config');
+              },
+            ),
+            ListTile(
+              title: Text('Logout', style: TextStyle(color: Colors.white)),
+              leading: Icon(Icons.logout, color: Colors.white, size: 25),
+              onTap: () async {
+                await _cleanAuth();
+                //_preferences.clear();
+                helper!.stop();
+                Navigator.pushNamed(context, '/register');
+              },
+            ),
           ],
         ),
-        body: Align(
+      ),
+      body: Container(
+        color: Colors.black87,
+        child: DefaultTextStyle(
+          style: TextStyle(color: Colors.white),
+          child: Align(
             alignment: Alignment(0, 0),
             child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: <Widget>[
-                  Padding(
-                    padding: const EdgeInsets.all(6.0),
-                    child: Center(
-                        child: Text(
-                      'Status: ${EnumHelper.getName(helper!.registerState.state)}',
-                      style: TextStyle(fontSize: 14, color: Colors.black54),
-                    )),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(6.0),
-                    child: Center(
-                        child: Text(
-                      'Received Message: $receivedMsg',
-                      style: TextStyle(fontSize: 14, color: Colors.black54),
-                    )),
-                  ),
-                  Container(
-                      child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: <Widget>[
+                Container(
+                  child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: _buildDialPad(),
-                  )),
-                ])));
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -408,7 +512,16 @@ class _MyDialPadWidget extends State<DialPadWidget>
       }
     }
     if (callState.state == CallStateEnum.FAILED) {
-      //si falla la llamada
+      //si falla la llamada se rechaza, o se cuelga antes de que el otro conteste
+      if (_appState == AppLifecycleState.paused) {
+        //si el que llama cuelga cuando el llamado tiene la app en segundo plano
+        stopSound();
+        flutterLocalNotificationsPlugin.cancel(0);
+        Navigator.of(context).pop();
+      }
+    }
+    if (callState.state == CallStateEnum.ENDED) {
+      //ocurre cuando la llamada se acepta y luego se cuelga
     }
   }
 
@@ -416,15 +529,18 @@ class _MyDialPadWidget extends State<DialPadWidget>
   void onNewMessage(SIPMessageRequest msg) {
     //Save the incoming message to DB
     String? msgBody = msg.request.body as String?;
-    setState(() {
-      receivedMsg = msgBody;
-    });
+    setState(
+      () {
+        receivedMsg = msgBody;
+      },
+    );
   }
 
   @override
   void onNewNotify(Notify ntf) {}
 
   void _showIncomingCallNotification() async {
+    playSound();
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails('incoming_call_channel', 'Incoming Call',
             channelDescription: 'Channel for incoming call notifications',
@@ -441,8 +557,10 @@ class _MyDialPadWidget extends State<DialPadWidget>
       'Tienes una llamada',
       platformChannelSpecifics,
     )
-        .catchError((onError) {
-      print(onError);
-    });
+        .catchError(
+      (onError) {
+        print(onError);
+      },
+    );
   }
 }
