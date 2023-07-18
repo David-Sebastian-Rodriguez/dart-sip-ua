@@ -21,6 +21,8 @@ class _MyRegisterWidget extends State<RegisterWidget>
   late SharedPreferences _preferences;
   late RegistrationState _registerState;
 
+  bool _passwordVisible = false;
+
   SIPUAHelper? get helper => widget._helper;
 
   @override
@@ -129,136 +131,126 @@ class _MyRegisterWidget extends State<RegisterWidget>
     helper!.start(settings);
   }
 
-  @override
+    @override
   Widget build(BuildContext context) {
     return Scaffold(
       /* appBar: AppBar(
-          automaticallyImplyLeading: false,
-          title: Text("SIP Account"),
-        ), */
-      body: Container(
-        color: Colors.white,
-        child: DefaultTextStyle(
-          style: TextStyle(color: Colors.black),
-          child: Align(
-            alignment: Alignment(0, 0),
+        automaticallyImplyLeading: false,
+        title: Text("SIP Account"),
+      ), */
+      body: SingleChildScrollView(
+        child: Container(
+          color: Colors.white,
+          child: DefaultTextStyle(
+            style: TextStyle(color: Colors.black),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               mainAxisAlignment: MainAxisAlignment.start,
               children: <Widget>[
-                Column(
-                  children: <Widget>[
-                    Padding(
-                      padding:
-                          const EdgeInsets.fromLTRB(48.0, 150.0, 48.0, 50.0),
-                      child: Center(
-                        child: Image.asset(
-                          'assets/images/company_logo.webp',
-                          width: 250,
-                        ),
-                      ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(48.0, 150.0, 48.0, 50.0),
+                  child: Center(
+                    child: Image.asset(
+                      'assets/images/company_logo.webp',
+                      width: 250,
                     ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(48.0, 25.0, 48.0, 0),
-                      child: TextFormField(
-                        controller: _domainController,
-                        keyboardType: TextInputType.text,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: Colors.black),
-                        decoration: InputDecoration(
-                          hintText: 'Dominio',
-                          hintStyle: TextStyle(color: Colors.black),
-                          enabledBorder: UnderlineInputBorder(
-                            borderSide: BorderSide(
-                                color: Colors
-                                    .black), // Color de la línea inferior deseado
-                          ),
-                          contentPadding: EdgeInsets.all(
-                            10.0,
-                          ),
-                          border: UnderlineInputBorder(
-                            borderSide: BorderSide(
-                              color: Colors.black,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-                Column(
-                  children: <Widget>[
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(
-                        48.0,
-                        50.0,
-                        48.0,
-                        0,
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(48.0, 25.0, 48.0, 0),
+                  child: TextFormField(
+                    controller: _domainController,
+                    keyboardType: TextInputType.text,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.black),
+                    decoration: InputDecoration(
+                      hintText: 'Dominio',
+                      hintStyle: TextStyle(color: Colors.black),
+                      enabledBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(
+                            color: Colors
+                                .black), // Color de la línea inferior deseado
                       ),
-                      child: TextFormField(
-                        controller: _extensionController,
-                        keyboardType: TextInputType.text,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
+                      contentPadding: EdgeInsets.all(10.0),
+                      border: UnderlineInputBorder(
+                        borderSide: BorderSide(
                           color: Colors.black,
                         ),
-                        decoration: InputDecoration(
-                          hintText: 'Extensión',
-                          hintStyle: TextStyle(
-                            color: Colors.black,
-                          ),
-                          enabledBorder: UnderlineInputBorder(
-                            borderSide: BorderSide(
-                              color: Colors.black,
-                            ), // Color de la línea inferior deseado
-                          ),
-                          contentPadding: EdgeInsets.all(
-                            10.0,
-                          ),
-                          border: UnderlineInputBorder(
-                            borderSide: BorderSide(
-                              color: Colors.black,
-                            ),
-                          ),
-                        ),
                       ),
                     ),
-                  ],
+                  ),
                 ),
-                Column(
-                  children: <Widget>[
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(
-                        48.0,
-                        50.0,
-                        48.0,
-                        0,
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(48.0, 50.0, 48.0, 0),
+                  child: TextFormField(
+                    controller: _extensionController,
+                    keyboardType: TextInputType.text,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.black,
+                    ),
+                    decoration: InputDecoration(
+                      hintText: 'Extensión',
+                      hintStyle: TextStyle(
+                        color: Colors.black,
                       ),
-                      child: TextFormField(
-                        controller: _passwordController,
-                        keyboardType: TextInputType.text,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
+                      enabledBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(
+                          color: Colors.black,
+                        ), // Color de la línea inferior deseado
+                      ),
+                      contentPadding: EdgeInsets.all(
+                        10.0,
+                      ),
+                      border: UnderlineInputBorder(
+                        borderSide: BorderSide(
                           color: Colors.black,
                         ),
-                        decoration: InputDecoration(
-                          hintText: 'Contraseña',
-                          hintStyle: TextStyle(
-                            color: Colors.black,
-                          ),
-                          enabledBorder: UnderlineInputBorder(
-                            borderSide: BorderSide(
-                              color: Colors.black,
-                            ), // Color de la línea inferior deseado
-                          ),
-                          contentPadding: EdgeInsets.all(10.0),
-                          border: UnderlineInputBorder(
-                            borderSide: BorderSide(color: Colors.red),
-                          ),
-                        ),
                       ),
                     ),
-                  ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(48.0, 50.0, 48.0, 0),
+                  child: TextFormField(
+                    controller: _passwordController,
+                    keyboardType: TextInputType.text,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.black,
+                    ),
+                    obscureText:
+                        !_passwordVisible, // Oculta o muestra el texto según el valor de _passwordVisible
+                    decoration: InputDecoration(
+                      hintText: 'Contraseña',
+                      hintStyle: TextStyle(
+                        color: Colors.black,
+                      ),
+                      enabledBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(
+                          color: Colors.black,
+                        ),
+                      ),
+                      contentPadding: EdgeInsets.all(10.0),
+                      border: UnderlineInputBorder(
+                        borderSide: BorderSide(color: Colors.red),
+                      ),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _passwordVisible
+                              ? Icons.visibility
+                              : Icons.visibility_off,
+                          color: Colors.black,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _passwordVisible =
+                                !_passwordVisible; // Cambia el estado de visibilidad de la contraseña
+                          });
+                        },
+                      ),
+                    ),
+                  ),
                 ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(0.0, 50.0, 0.0, 0.0),
@@ -274,7 +266,7 @@ class _MyRegisterWidget extends State<RegisterWidget>
                       onPressed: () => _handleSave(context),
                     ),
                   ),
-                )
+                ),
               ],
             ),
           ),
@@ -282,6 +274,7 @@ class _MyRegisterWidget extends State<RegisterWidget>
       ),
     );
   }
+
 
   @override
   void callStateChanged(Call call, CallState state) {
