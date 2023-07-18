@@ -116,6 +116,7 @@ class _MyDialPadWidget extends State<DialPadWidget>
     if (!_preferences.containsKey('lang')) {
       _preferences.setString('lang', 'es');
     }
+    idiomEs = _preferences.getString('lang') == 'es';
 
     setState(() {});
   }
@@ -320,7 +321,7 @@ class _MyDialPadWidget extends State<DialPadWidget>
               width: 360,
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.white10,
+                  color: Colors.black26,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 padding: EdgeInsets.all(10.0),
@@ -387,7 +388,7 @@ class _MyDialPadWidget extends State<DialPadWidget>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.black87,
+        backgroundColor: Colors.red,
         title: Text(
           idiomEs ? "Marcador" : "Dialer",
           style: TextStyle(color: Colors.white),
@@ -431,14 +432,15 @@ class _MyDialPadWidget extends State<DialPadWidget>
               },
             ),
             ListTile(
-                title: Text('Contactos', style: TextStyle(color: Colors.white)),
+                title: Text(idiomEs ? 'Contactos' : 'Contacts',
+                    style: TextStyle(color: Colors.white)),
                 leading:
                     Icon(Icons.contact_phone, color: Colors.white, size: 25),
                 onTap: () {
                   Navigator.pushNamed(context, '/contacts');
                 }),
             ListTile(
-              title: Text('Historial de llamadas',
+              title: Text(idiomEs ? 'Historial de llamadas' : 'Call History',
                   style: TextStyle(color: Colors.white)),
               leading: Icon(Icons.history, color: Colors.white, size: 25),
               onTap: () {
@@ -446,22 +448,29 @@ class _MyDialPadWidget extends State<DialPadWidget>
               },
             ),
             ListTile(
-              title: Text('About', style: TextStyle(color: Colors.white)),
+              title: Text(idiomEs ? 'Sobre nosotros' : 'About',
+                  style: TextStyle(color: Colors.white)),
               leading: Icon(Icons.info, color: Colors.white, size: 25),
               onTap: () {
                 Navigator.pushNamed(context, '/about');
               },
             ),
             ListTile(
-              title:
-                  Text('Configuración', style: TextStyle(color: Colors.white)),
+              title: Text(idiomEs ? 'Configuración' : 'Setting',
+                  style: TextStyle(color: Colors.white)),
               leading: Icon(Icons.settings, color: Colors.white, size: 25),
               onTap: () {
-                Navigator.pushNamed(context, '/config');
+                Navigator.pushNamed(context, '/config').then((result) {
+                  setState(() {
+                    idiomEs = _preferences.getString('lang') == 'es';
+                  });
+                });
+                ;
               },
             ),
             ListTile(
-              title: Text('Logout', style: TextStyle(color: Colors.white)),
+              title: Text(idiomEs ? 'Cerrar sesión' : 'Logout',
+                  style: TextStyle(color: Colors.white)),
               leading: Icon(Icons.logout, color: Colors.white, size: 25),
               onTap: () async {
                 await _cleanAuth();
@@ -474,7 +483,6 @@ class _MyDialPadWidget extends State<DialPadWidget>
         ),
       ),
       body: Container(
-        color: Colors.black87,
         child: DefaultTextStyle(
           style: TextStyle(color: Colors.white),
           child: Align(

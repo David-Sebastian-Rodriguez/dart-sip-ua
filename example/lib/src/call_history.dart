@@ -16,21 +16,41 @@ class CallHistory extends StatefulWidget {
 
 class _CallHistoryState extends State<CallHistory> {
   SIPUAHelper? get helper => widget._helper;
+  bool idiomEs = true;
+  late SharedPreferences _preferences;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSettings();
+  }
+
+  Future<void> _loadSettings() async {
+    _preferences = await SharedPreferences.getInstance();
+
+    if (!_preferences.containsKey('lang')) {
+      _preferences.setString('lang', 'es');
+    }
+
+    idiomEs = _preferences.getString('lang') == 'es';
+
+    setState(() {});
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.black87,
+        backgroundColor: Colors.red,
         title: Text(
-          "Historial de llamadas",
+          idiomEs ? "Historial de llamadas" : 'Call History',
           style: TextStyle(
             color: Colors.white, // Cambia el color del texto aquí
           ),
         ),
       ),
       body: Container(
-        color: Colors.black87,
+        color: Colors.white,
         child: FutureBuilder<List<String>>(
           future: getCallHistory(),
           builder: (context, snapshot) {
@@ -53,7 +73,7 @@ class _CallHistoryState extends State<CallHistory> {
                         callType == "Llamada saliente"
                             ? Icons.call_made
                             : Icons.call_received,
-                        color: Colors.white, // Establecer el color del icono
+                        color: Colors.black, // Establecer el color del icono
                       ),
                       title: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -62,7 +82,7 @@ class _CallHistoryState extends State<CallHistory> {
                             phoneNumber,
                             style: TextStyle(
                               color:
-                                  Colors.white, // Establecer el color del texto
+                                  Colors.black, // Establecer el color del texto
                             ),
                           ),
                           Text(
@@ -71,7 +91,7 @@ class _CallHistoryState extends State<CallHistory> {
                             style: TextStyle(
                               fontSize: 12,
                               color:
-                                  Colors.white, // Establecer el color del texto
+                                  Colors.black, // Establecer el color del texto
                             ),
                           ),
                           Text(
@@ -80,7 +100,7 @@ class _CallHistoryState extends State<CallHistory> {
                             style: TextStyle(
                               fontSize: 12,
                               color:
-                                  Colors.white, // Establecer el color del texto
+                                  Colors.black, // Establecer el color del texto
                             ),
                           ),
                         ],

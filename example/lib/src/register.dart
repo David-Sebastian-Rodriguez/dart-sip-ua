@@ -137,9 +137,9 @@ class _MyRegisterWidget extends State<RegisterWidget>
           title: Text("SIP Account"),
         ), */
       body: Container(
-        color: Colors.black87,
+        color: Colors.white,
         child: DefaultTextStyle(
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: Colors.black),
           child: Align(
             alignment: Alignment(0, 0),
             child: Column(
@@ -164,21 +164,21 @@ class _MyRegisterWidget extends State<RegisterWidget>
                         controller: _domainController,
                         keyboardType: TextInputType.text,
                         textAlign: TextAlign.center,
-                        style: TextStyle(color: Colors.white70),
+                        style: TextStyle(color: Colors.black),
                         decoration: InputDecoration(
                           hintText: 'Dominio',
-                          hintStyle: TextStyle(color: Colors.white70),
+                          hintStyle: TextStyle(color: Colors.black),
                           enabledBorder: UnderlineInputBorder(
                             borderSide: BorderSide(
-                                color: Color.fromRGBO(255, 255, 255,
-                                    0.702)), // Color de la línea inferior deseado
+                                color: Colors
+                                    .black), // Color de la línea inferior deseado
                           ),
                           contentPadding: EdgeInsets.all(
                             10.0,
                           ),
                           border: UnderlineInputBorder(
                             borderSide: BorderSide(
-                              color: Colors.white,
+                              color: Colors.black,
                             ),
                           ),
                         ),
@@ -200,16 +200,16 @@ class _MyRegisterWidget extends State<RegisterWidget>
                         keyboardType: TextInputType.text,
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          color: Colors.white70,
+                          color: Colors.black,
                         ),
                         decoration: InputDecoration(
                           hintText: 'Extensión',
                           hintStyle: TextStyle(
-                            color: Colors.white70,
+                            color: Colors.black,
                           ),
                           enabledBorder: UnderlineInputBorder(
                             borderSide: BorderSide(
-                              color: Colors.white70,
+                              color: Colors.black,
                             ), // Color de la línea inferior deseado
                           ),
                           contentPadding: EdgeInsets.all(
@@ -217,7 +217,7 @@ class _MyRegisterWidget extends State<RegisterWidget>
                           ),
                           border: UnderlineInputBorder(
                             borderSide: BorderSide(
-                              color: Colors.white30,
+                              color: Colors.black,
                             ),
                           ),
                         ),
@@ -239,16 +239,16 @@ class _MyRegisterWidget extends State<RegisterWidget>
                         keyboardType: TextInputType.text,
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          color: Colors.white70,
+                          color: Colors.black,
                         ),
                         decoration: InputDecoration(
                           hintText: 'Contraseña',
                           hintStyle: TextStyle(
-                            color: Colors.white70,
+                            color: Colors.black,
                           ),
                           enabledBorder: UnderlineInputBorder(
                             borderSide: BorderSide(
-                              color: Colors.white70,
+                              color: Colors.black,
                             ), // Color de la línea inferior deseado
                           ),
                           contentPadding: EdgeInsets.all(10.0),
@@ -270,8 +270,7 @@ class _MyRegisterWidget extends State<RegisterWidget>
                         'Register',
                         style: TextStyle(fontSize: 16.0, color: Colors.white),
                       ),
-                      color: Colors.white24,
-                      textColor: Colors.white30,
+                      color: Colors.red,
                       onPressed: () => _handleSave(context),
                     ),
                   ),

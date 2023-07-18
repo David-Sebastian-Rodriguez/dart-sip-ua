@@ -3,6 +3,7 @@ import 'package:contacts_service/contacts_service.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:sip_ua/sip_ua.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shimmer/shimmer.dart';
 
@@ -16,11 +17,26 @@ class Contacts extends StatefulWidget {
 class _ContactsState extends State<Contacts> {
   List<Contact> _contacts = [];
   SIPUAHelper? get helper => widget._helper;
+  bool idiomEs = true;
+  late SharedPreferences _preferences;
 
   @override
   void initState() {
     super.initState();
+    _loadSettings();
     fetchContacts();
+  }
+
+  Future<void> _loadSettings() async {
+    _preferences = await SharedPreferences.getInstance();
+
+    if (!_preferences.containsKey('lang')) {
+      _preferences.setString('lang', 'es');
+    }
+
+    idiomEs = _preferences.getString('lang') == 'es';
+
+    setState(() {});
   }
 
   Future<void> fetchContacts() async {
@@ -73,9 +89,8 @@ class _ContactsState extends State<Contacts> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.black87,
         title: Text(
-          "Lista de Contactos",
+          idiomEs ? "Lista de Contactos" : 'Contact list',
           style: TextStyle(
             color: Colors.white, // Cambia el color del texto aquí
           ),
@@ -84,7 +99,6 @@ class _ContactsState extends State<Contacts> {
       body: _contacts.isEmpty
           ? shimmerLoadingEffect()
           : Container(
-              color: Colors.black87,
               child: ListView.builder(
                 itemCount: _contacts.length,
                 itemBuilder: (context, index) {
@@ -97,14 +111,14 @@ class _ContactsState extends State<Contacts> {
 
   Widget shimmerLoadingEffect() {
     return Container(
-      color: Colors.black87,
+      color: Colors.white,
       child: ListView.builder(
         itemCount:
             5, // Cantidad de elementos ficticios para mostrar el efecto de carga
         itemBuilder: (context, index) {
           return Shimmer.fromColors(
-            baseColor: Colors.grey[700]!,
-            highlightColor: Colors.grey[600]!,
+            baseColor: Colors.grey[300]!,
+            highlightColor: Colors.grey[300]!,
             child: Container(
               padding: EdgeInsets.all(20),
               margin: EdgeInsets.symmetric(vertical: 5),
@@ -182,6 +196,13 @@ class _ContactsState extends State<Contacts> {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 4,
+                  offset: Offset(0, 2),
+                ),
+              ],
             ),
             child: Icon(Icons.person),
           ),
@@ -194,7 +215,7 @@ class _ContactsState extends State<Contacts> {
                 Text(
                   contact.displayName ?? '',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: Colors.black,
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),

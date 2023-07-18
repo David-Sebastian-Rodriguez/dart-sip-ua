@@ -34,8 +34,10 @@ void main() {
   });
 }
 
-typedef PageContentBuilder = Widget Function(
-    [SIPUAHelper? helper, Object? arguments]);
+typedef PageContentBuilder = Widget Function([
+  SIPUAHelper? helper,
+  Object? arguments,
+]);
 
 // ignore: must_be_immutable
 class MyApp extends StatelessWidget {
