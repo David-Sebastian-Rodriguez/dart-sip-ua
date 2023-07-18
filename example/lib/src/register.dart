@@ -38,9 +38,9 @@ class _MyRegisterWidget extends State<RegisterWidget>
   }
 
   void _loadSettings() async {
-    //const extencion1 = '901';
-    const extencion2 = '561';
-    const extencion = extencion2;
+    const extencion1 = '901';
+    //const extencion2 = '561';
+    const extencion = extencion1;
     _preferences = await SharedPreferences.getInstance();
     // codigo para hacer que al inicio se borren los datos guardados de autenticacion
     //_preferences.clear();
