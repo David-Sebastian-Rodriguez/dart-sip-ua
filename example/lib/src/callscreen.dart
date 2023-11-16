@@ -44,6 +44,8 @@ class _MyCallScreenWidget extends State<CallScreenWidget>
   String callId1 = "";
   String callId2 = "";
 
+  bool secondCallStartered = false;
+
   final SIPUAHelper helper2 = SIPUAHelper();
 
   AudioCache audioCache = AudioCache();
@@ -97,7 +99,7 @@ class _MyCallScreenWidget extends State<CallScreenWidget>
     _sendAuthSecondHelper();
 
     _textController = TextEditingController(text: "");
-    _textController!.text = "8888";
+    _textController!.text = "";
 
     setState(() {});
   }
@@ -205,9 +207,11 @@ class _MyCallScreenWidget extends State<CallScreenWidget>
     }
 
     if (callId1 != call.id && (callId2 == "" || callId2 == call.id)) {
-      callId2 = call.id!;
-      isSecondCall = true;
-      if (callState.state == CallStateEnum.CALL_INITIATION) {
+      if (callState.state == CallStateEnum.CALL_INITIATION &&
+          secondCallStartered) {
+        secondCallStartered = false;
+        callId2 = call.id!;
+        isSecondCall = true;
         call2 = call;
       }
       return;
@@ -238,7 +242,6 @@ class _MyCallScreenWidget extends State<CallScreenWidget>
     if (callState.state != CallStateEnum.STREAM && callId1 == call.id) {
       _state = callState.state;
     }
-
     switch (callState.state) {
       case CallStateEnum.STREAM:
         _handelStreams(callState);
@@ -449,6 +452,7 @@ class _MyCallScreenWidget extends State<CallScreenWidget>
   Future<Widget?> _handleCall(BuildContext context,
       [bool voiceOnly = false]) async {
     if (isSecondCall) {
+      secondCallStartered = false;
       call2.hangup({'status_code': 603});
       isSecondCall = false;
       callId2 = "";
@@ -456,6 +460,8 @@ class _MyCallScreenWidget extends State<CallScreenWidget>
         _backToDialPad();
       }
       return null;
+    } else {
+      secondCallStartered = true;
     }
 
     var dest = _textController?.text;
@@ -733,15 +739,6 @@ class _MyCallScreenWidget extends State<CallScreenWidget>
                         ),
                       ),
                     ),
-                    /* Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(6),
-                        child: Text(
-                          _timeLabel,
-                          style: TextStyle(fontSize: 14, color: Colors.white),
-                        ),
-                      ),
-                    ) */
                   ],
                 ),
               )

@@ -46,14 +46,22 @@ class _MyRegisterWidget extends State<RegisterWidget>
     _preferences = await SharedPreferences.getInstance();
     // codigo para hacer que al inicio se borren los datos guardados de autenticacion
     //_preferences.clear();
-    setState(() {
+
+    /* setState(() {
       _domainController.text =
           _preferences.getString('dominio') ?? 'yaco.calltechsa.com';
       _passwordController.text =
           _preferences.getString('password') ?? 'Ext${extencion}Calltech*';
       _extensionController.text =
           _preferences.getString('extension') ?? extencion;
+    }); */
+
+    setState(() {
+      _domainController.text = _preferences.getString('dominio') ?? '';
+      _extensionController.text = _preferences.getString('extension') ?? '';
+      _passwordController.text = _preferences.getString('password') ?? '';
     });
+
     if (validatePreference(_preferences) &&
         _registerState.state != RegistrationStateEnum.REGISTERED) _sendAuth();
   }
@@ -65,6 +73,7 @@ class _MyRegisterWidget extends State<RegisterWidget>
   }
 
   void _saveSettings() {
+    print('${_domainController.text} aaaaaaaaaaaaaaaaaaaaaa');
     _preferences.setString('dominio', _domainController.text);
     _preferences.setString('password', _passwordController.text);
     _preferences.setString('extension', _extensionController.text);

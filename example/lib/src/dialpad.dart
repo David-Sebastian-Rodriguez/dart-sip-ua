@@ -29,6 +29,8 @@ class _MyDialPadWidget extends State<DialPadWidget>
   bool _preferencesInitialized = false;
   bool idiomEs = true;
 
+  bool isInCalling = false;
+
   late String _wsUriController;
   late String _passwordController;
   late String _authorizationUserController;
@@ -77,7 +79,6 @@ class _MyDialPadWidget extends State<DialPadWidget>
     // These are the callbacks
     switch (state) {
       case AppLifecycleState.resumed:
-        //print('resume....');
         if (player.state == PlayerState.PLAYING) {
           stopSound();
         }
@@ -85,18 +86,15 @@ class _MyDialPadWidget extends State<DialPadWidget>
         break;
       case AppLifecycleState.inactive:
         // widget is inactive
-        //print('inactive....');
         _appState = state;
         break;
       case AppLifecycleState.paused:
         // widget is paused
         _appState = state;
-        //print('paused....');
         break;
       case AppLifecycleState.detached:
         // widget is detached
         _appState = state;
-        //print('detaches....');
         break;
     }
   }
@@ -108,7 +106,8 @@ class _MyDialPadWidget extends State<DialPadWidget>
     if (_registerState.state != RegistrationStateEnum.REGISTERED) {
       _sendAuth();
     }
-    _dest = _preferences.getString('dest') ?? '8888';
+    //_dest = _preferences.getString('dest') ?? '8888';
+    _dest = _preferences.getString('dest') ?? '';
     _ext = _preferences.getString('extension') ?? 'None';
     _textController = TextEditingController(text: _dest);
     _textController!.text = _dest!;
@@ -132,7 +131,7 @@ class _MyDialPadWidget extends State<DialPadWidget>
   }
 
   Future<void> _cleanAuth() async {
-    await _preferences.remove('dominio');
+    //await _preferences.remove('dominio');
     await _preferences.remove('password');
     await _preferences.remove('extension');
   }
@@ -511,7 +510,9 @@ class _MyDialPadWidget extends State<DialPadWidget>
 
   @override
   void callStateChanged(Call call, CallState callState) {
-    if (callState.state == CallStateEnum.CALL_INITIATION) {
+    if (callState.state == CallStateEnum.CALL_INITIATION && !isInCalling) {
+      print('inCALLIGN: $isInCalling, state: ${callState.state} aaaaaaaaa');
+      isInCalling = true;
       Navigator.pushNamed(context, '/callscreen', arguments: call);
       var dest = _textController?.text;
       _preferences.setString('dest', dest!);
@@ -521,15 +522,18 @@ class _MyDialPadWidget extends State<DialPadWidget>
     }
     if (callState.state == CallStateEnum.FAILED) {
       //si falla la llamada se rechaza, o se cuelga antes de que el otro conteste
+      isInCalling = false;
       if (_appState == AppLifecycleState.paused) {
         //si el que llama cuelga cuando el llamado tiene la app en segundo plano
         stopSound();
         flutterLocalNotificationsPlugin.cancel(0);
         Navigator.of(context).pop();
+        isInCalling = false;
       }
     }
     if (callState.state == CallStateEnum.ENDED) {
       //ocurre cuando la llamada se acepta y luego se cuelga
+      isInCalling = false;
     }
   }
 
