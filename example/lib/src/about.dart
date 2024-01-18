@@ -96,12 +96,22 @@ class _AboutWidgetState extends State<AboutWidget> {
                   ),
                   SizedBox(height: 10),
                   Text(
-                    'Todos los derechos reservados.',
+                    idiomEs
+                        ? 'Todos los derechos reservados.'
+                        : 'All rights reserved.',
                     style: TextStyle(
                       fontSize: 14,
-                      color: Colors.white54,
+                      color: Colors.black54,
                     ),
                   ),
+                  SizedBox(height: 20),
+                  Text(
+                    'V-1.0.0',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.black54,
+                    ),
+                  )
                 ],
               ),
             ),

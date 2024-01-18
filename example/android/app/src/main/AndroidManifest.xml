@@ -41,7 +41,7 @@
     <uses-permission android:name="android.permission.READ_CONTACTS" />
 
    <application
-        android:label="YACO TEST"
+        android:label="YACO"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:requestLegacyExternalStorage="true">

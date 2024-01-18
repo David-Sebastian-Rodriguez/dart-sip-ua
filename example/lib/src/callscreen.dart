@@ -75,6 +75,8 @@ class _MyCallScreenWidget extends State<CallScreenWidget>
   late String _passwordController;
   late String _authorizationUserController;
 
+  bool idiomEs = true;
+
   @override
   initState() {
     super.initState();
@@ -97,6 +99,8 @@ class _MyCallScreenWidget extends State<CallScreenWidget>
   void _loadSettings() async {
     _preferences = await SharedPreferences.getInstance();
     _sendAuthSecondHelper();
+
+    idiomEs = _preferences.getString('lang') == 'es';
 
     _textController = TextEditingController(text: "");
     _textController!.text = "";
@@ -124,8 +128,15 @@ class _MyCallScreenWidget extends State<CallScreenWidget>
     settings.webSocketSettings.extraHeaders = _wsExtraHeaders;
     settings.webSocketSettings.allowBadCertificate = true;
     //settings.webSocketSettings.userAgent = 'Dart/2.8 (dart:io) for OpenSIPS.';
+    if (_preferences.getString('IPCheck').toString() == 'true') {
+      settings.uri =
+          'sip:$_authorizationUserController@${_preferences.getString('IP')}';
+    } else {
+      settings.uri =
+          'sip:$_authorizationUserController@${_preferences.getString('dominio')}';
+    }
 
-    settings.uri = 'sip:$_authorizationUserController@143.244.209.136';
+    print('${settings.uri} aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
     settings.authorizationUser = _authorizationUserController;
     settings.password = _passwordController;
     settings.userAgent = 'Dart SIP Client v1.0.0';
@@ -579,14 +590,14 @@ class _MyCallScreenWidget extends State<CallScreenWidget>
 
   Widget _buildActionButtons() {
     var hangupBtn = ActionButton(
-      title: "hangup",
+      title: idiomEs ? "colgar" : "hangup",
       onPressed: () => _handleHangup(),
       icon: Icons.call_end,
       fillColor: Colors.red,
     );
 
     var hangupBtnInactive = ActionButton(
-      title: "hangup",
+      title: idiomEs ? "colgar" : "hangup",
       onPressed: () {},
       icon: Icons.call_end,
       fillColor: Colors.grey,
@@ -616,7 +627,9 @@ class _MyCallScreenWidget extends State<CallScreenWidget>
         {
           advanceActions.add(
             ActionButton(
-              title: _audioMuted ? 'unmute' : 'mute',
+              title: idiomEs
+                  ? (_audioMuted ? 'activar' : 'silenciar')
+                  : (_audioMuted ? 'unmute' : 'mute'),
               icon: _audioMuted ? Icons.mic_off : Icons.mic,
               checked: _audioMuted,
               onPressed: () => _muteAudio(),
@@ -625,7 +638,9 @@ class _MyCallScreenWidget extends State<CallScreenWidget>
 
           advanceActions.add(
             ActionButton(
-              title: _speakerOn ? 'speaker off' : 'speaker on',
+              title: idiomEs
+                  ? (_speakerOn ? 'apagar' : 'altavoz')
+                  : (_speakerOn ? 'speaker off' : 'speaker on'),
               icon: _speakerOn ? Icons.volume_off : Icons.volume_up,
               checked: _speakerOn,
               onPressed: () => _toggleSpeaker(),
@@ -635,7 +650,7 @@ class _MyCallScreenWidget extends State<CallScreenWidget>
           if (voiceOnly) {
             advanceActions.add(
               ActionButton(
-                title: "keypad",
+                title: idiomEs ? "teclado" : "keypad",
                 icon: Icons.dialpad,
                 onPressed: () => _handleKeyPad(),
               ),
@@ -643,7 +658,7 @@ class _MyCallScreenWidget extends State<CallScreenWidget>
           } else {
             advanceActions.add(
               ActionButton(
-                title: "switch",
+                title: idiomEs ? "seleccionar" : "switch",
                 icon: Icons.switch_video,
                 onPressed: () => _switchCamera(),
               ),
@@ -651,7 +666,9 @@ class _MyCallScreenWidget extends State<CallScreenWidget>
 
             advanceActions.add(
               ActionButton(
-                title: _videoMuted ? "camera on" : 'camera off',
+                title: idiomEs
+                    ? (_videoMuted ? "encender" : 'apagar')
+                    : (_videoMuted ? "camera on" : 'camera off'),
                 icon: _videoMuted ? Icons.videocam : Icons.videocam_off,
                 checked: _videoMuted,
                 onPressed: () => _muteVideo(),
@@ -664,7 +681,9 @@ class _MyCallScreenWidget extends State<CallScreenWidget>
               fillColor: isSecondCall
                   ? Color.fromARGB(255, 194, 132, 128)
                   : Colors.red,
-              title: _hold ? 'unhold' : 'hold',
+              title: idiomEs
+                  ? (_hold ? 'reanudar' : 'pausar')
+                  : (_hold ? 'unhold' : 'hold'),
               icon: _hold ? Icons.play_arrow : Icons.pause,
               checked: _hold,
               onPressed: isSecondCall ? null : () => _handleHold(),
@@ -677,7 +696,7 @@ class _MyCallScreenWidget extends State<CallScreenWidget>
             basicActions.add(
               ActionButton(
                 fillColor: isSecondCall ? Colors.black : null,
-                title: "back",
+                title: idiomEs ? "volver" : "back",
                 icon: Icons.keyboard_arrow_down,
                 onPressed: isSecondCall ? null : () => _handleKeyPad(),
               ),
@@ -685,7 +704,7 @@ class _MyCallScreenWidget extends State<CallScreenWidget>
           } else {
             basicActions.add(
               ActionButton(
-                title: "transfer",
+                title: idiomEs ? "transferir" : "transfer",
                 icon: Icons.phone_forwarded,
                 onPressed: () => _handleTransfer(),
               ),
@@ -721,11 +740,21 @@ class _MyCallScreenWidget extends State<CallScreenWidget>
                         padding: const EdgeInsets.all(6),
                         child: Padding(
                           padding: EdgeInsets.only(top: 30),
-                          child: Text(
-                            (call2.state.toString() == "CallStateEnum.CONFIRMED"
-                                ? 'SECOND VOICE CALL'
-                                : 'CONECTING SECOND CALL...'),
-                            style: TextStyle(fontSize: 24, color: Colors.black),
+                          child: Center(
+                            child: Text(
+                              idiomEs
+                                  ? (call2.state.toString() ==
+                                          "CallStateEnum.CONFIRMED"
+                                      ? 'SEGUNDA LLAMADA DE VOZ'
+                                      : 'CONECTANDO SEGUNDA LLAMADA...')
+                                  : (call2.state.toString() ==
+                                          "CallStateEnum.CONFIRMED"
+                                      ? 'SECOND VOICE CALL'
+                                      : 'CONNECTING SECOND CALL...'),
+                              style:
+                                  TextStyle(fontSize: 24, color: Colors.black),
+                              textAlign: TextAlign.center,
+                            ),
                           ),
                         ),
                       ),
@@ -878,20 +907,35 @@ class _MyCallScreenWidget extends State<CallScreenWidget>
               children: <Widget>[
                 Center(
                   child: Padding(
-                    padding: const EdgeInsets.all(6),
+                    padding: const EdgeInsets.all(0),
                     child: Padding(
                       padding: EdgeInsets.only(top: 30),
-                      child: Text(
-                        (voiceOnly ? 'VOICE CALL' : 'VIDEO CALL') +
-                            (_hold &&
-                                    !(call?.state.toString() ==
-                                        "CallStateEnum.ENDED")
-                                ? ' PAUSED BY ${_holdOriginator!.toUpperCase()}'
-                                : (call?.state.toString() ==
-                                        "CallStateEnum.ENDED")
-                                    ? ' ENDED'
-                                    : ''),
-                        style: TextStyle(fontSize: 24, color: Colors.black),
+                      child: Center(
+                        child: Text(
+                          idiomEs
+                              ? (voiceOnly
+                                      ? 'LLAMADA DE VOZ'
+                                      : 'LLAMADA DE VIDEO') +
+                                  (_hold &&
+                                          !(call?.state.toString() ==
+                                              "CallStateEnum.ENDED")
+                                      ? ' EN PAUSA POR ${_holdOriginator!.toUpperCase()}'
+                                      : (call?.state.toString() ==
+                                              "CallStateEnum.ENDED")
+                                          ? ' FINALIZADA'
+                                          : '')
+                              : (voiceOnly ? 'VOICE CALL' : 'VIDEO CALL') +
+                                  (_hold &&
+                                          !(call?.state.toString() ==
+                                              "CallStateEnum.ENDED")
+                                      ? ' PAUSED BY ${_holdOriginator!.toUpperCase()}'
+                                      : (call?.state.toString() ==
+                                              "CallStateEnum.ENDED")
+                                          ? ' ENDED'
+                                          : ''),
+                          style: TextStyle(fontSize: 24, color: Colors.black),
+                          textAlign: TextAlign.center, // Esto centra el texto
+                        ),
                       ),
                     ),
                   ),

@@ -156,8 +156,15 @@ class _MyDialPadWidget extends State<DialPadWidget>
     settings.webSocketSettings.extraHeaders = _wsExtraHeaders;
     settings.webSocketSettings.allowBadCertificate = true;
     //settings.webSocketSettings.userAgent = 'Dart/2.8 (dart:io) for OpenSIPS.';
+    if (_preferences.getString('IPCheck').toString() == 'true') {
+      settings.uri =
+          'sip:$_authorizationUserController@${_preferences.getString('IP')}';
+    } else {
+      settings.uri =
+          'sip:$_authorizationUserController@${_preferences.getString('dominio')}';
+    }
 
-    settings.uri = 'sip:$_authorizationUserController@143.244.209.136';
+    print('${settings.uri} aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
     settings.authorizationUser = _authorizationUserController;
     settings.password = _passwordController;
     settings.userAgent = 'Dart SIP Client v1.0.0';
@@ -417,7 +424,35 @@ class _MyDialPadWidget extends State<DialPadWidget>
             ),
             ListTile(
               title: Text(
-                EnumHelper.getName(helper!.registerState.state),
+                idiomEs
+                    ? (() {
+                        switch (helper!.registerState.state) {
+                          case RegistrationStateEnum.NONE:
+                            return 'Error';
+                          case RegistrationStateEnum.REGISTRATION_FAILED:
+                            return 'Fallo en el registro';
+                          case RegistrationStateEnum.REGISTERED:
+                            return 'Registrado';
+                          case RegistrationStateEnum.UNREGISTERED:
+                            return 'No registrado';
+                          default:
+                            return 'Desconocido';
+                        }
+                      })()
+                    : (() {
+                        switch (helper!.registerState.state) {
+                          case RegistrationStateEnum.NONE:
+                            return 'None';
+                          case RegistrationStateEnum.REGISTRATION_FAILED:
+                            return 'Registration failed';
+                          case RegistrationStateEnum.REGISTERED:
+                            return 'Registered';
+                          case RegistrationStateEnum.UNREGISTERED:
+                            return 'Unregistered';
+                          default:
+                            return 'Unknown';
+                        }
+                      })(),
                 style: TextStyle(color: Colors.white),
               ),
               leading: Image.asset(
@@ -464,7 +499,6 @@ class _MyDialPadWidget extends State<DialPadWidget>
                     idiomEs = _preferences.getString('lang') == 'es';
                   });
                 });
-                ;
               },
             ),
             ListTile(

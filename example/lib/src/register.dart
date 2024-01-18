@@ -13,6 +13,7 @@ class _MyRegisterWidget extends State<RegisterWidget>
     implements SipUaHelperListener {
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _domainController = TextEditingController();
+  final TextEditingController _iPController = TextEditingController();
   final TextEditingController _extensionController = TextEditingController();
   final Map<String, String> _wsExtraHeaders = {
     // 'Origin': ' https://tryit.jssip.net',
@@ -20,6 +21,8 @@ class _MyRegisterWidget extends State<RegisterWidget>
   };
   late SharedPreferences _preferences;
   late RegistrationState _registerState;
+
+  bool checkIp = false;
 
   bool _passwordVisible = false;
 
@@ -40,9 +43,9 @@ class _MyRegisterWidget extends State<RegisterWidget>
   }
 
   void _loadSettings() async {
-    const extencion1 = '901';
+    //const extencion1 = '901';
     //const extencion2 = '561';
-    const extencion = extencion1;
+    //const extencion = extencion1;
     _preferences = await SharedPreferences.getInstance();
     // codigo para hacer que al inicio se borren los datos guardados de autenticacion
     //_preferences.clear();
@@ -58,6 +61,8 @@ class _MyRegisterWidget extends State<RegisterWidget>
 
     setState(() {
       _domainController.text = _preferences.getString('dominio') ?? '';
+      _iPController.text = _preferences.getString('IP') ?? '';
+      checkIp = _preferences.getString('IPCheck') == 'true';
       _extensionController.text = _preferences.getString('extension') ?? '';
       _passwordController.text = _preferences.getString('password') ?? '';
     });
@@ -69,12 +74,15 @@ class _MyRegisterWidget extends State<RegisterWidget>
   bool validatePreference(SharedPreferences preferences) {
     return preferences.containsKey('dominio') &&
         preferences.containsKey('password') &&
-        preferences.containsKey('extension');
+        preferences.containsKey('extension') &&
+        preferences.containsKey('IPCheck') &&
+        preferences.containsKey('IP');
   }
 
   void _saveSettings() {
-    print('${_domainController.text} aaaaaaaaaaaaaaaaaaaaaa');
     _preferences.setString('dominio', _domainController.text);
+    _preferences.setString('IP', _iPController.text);
+    _preferences.setString('IPCheck', checkIp.toString());
     _preferences.setString('password', _passwordController.text);
     _preferences.setString('extension', _extensionController.text);
   }
@@ -84,10 +92,36 @@ class _MyRegisterWidget extends State<RegisterWidget>
     setState(() {
       _registerState = state;
     });
+    print('intento de registro aaaaaaaaaaaaaaaaaa');
     if (_registerState.state == RegistrationStateEnum.REGISTERED) {
       _saveSettings();
       Navigator.pushReplacementNamed(context, '/home');
+    } else {
+      print('fallo aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
+      _alertFail(context);
     }
+  }
+
+  void _alertFail(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Error al iniciar sesión'),
+          content: Text(
+              'Error al intentar iniciar sesión. Por favor, verifique los campos Dominio, Usuario y Contraseña y de ser necesario añada una direccion IP.'),
+          actions: <Widget>[
+            TextButton(
+              child: Text('Ok'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _alert(BuildContext context, String alertFieldName) {
@@ -118,6 +152,8 @@ class _MyRegisterWidget extends State<RegisterWidget>
       _alert(context, "Contraseña");
     } else if (_extensionController.text == '') {
       _alert(context, "Extensión");
+    } else if (_iPController.text == '' && checkIp) {
+      _alert(context, "IP");
     } else {
       _sendAuth();
     }
@@ -131,7 +167,30 @@ class _MyRegisterWidget extends State<RegisterWidget>
     settings.webSocketSettings.allowBadCertificate = true;
     //settings.webSocketSettings.userAgent = 'Dart/2.8 (dart:io) for OpenSIPS.';
 
-    settings.uri = 'sip:${_extensionController.text}@143.244.209.136';
+    String iP = _domainController.text;
+
+    /*switch (_domainController.text) {
+      case 'yaco.calltechsa.com':
+        Ip = '143.244.209.136';
+        break;
+      case 'yaco-staging.calltechsa.com':
+        Ip = '192.168.0.184';
+        break;
+      case 'yaco-dev.calltechsa.com':
+        Ip = '167.172.16.183';
+        break;
+      default:
+    } */
+
+    if (_iPController.text != "" && checkIp) {
+      iP = _iPController.text;
+    }
+
+    //settings.uri = 'sip:${_extensionController.text}@143.244.209.136';
+    //settings.uri = 'sip:${_extensionController.text}@$Ip';
+    settings.uri = 'sip:${_extensionController.text}@$iP';
+    print('${settings.uri} aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
+
     settings.authorizationUser = _extensionController.text;
     settings.password = _passwordController.text;
     settings.userAgent = 'Dart SIP Client v1.0.0';
@@ -194,7 +253,70 @@ class _MyRegisterWidget extends State<RegisterWidget>
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(48.0, 50.0, 48.0, 0),
+                    padding: const EdgeInsets.fromLTRB(48.0, 25.0, 48.0, 0),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width:
+                              50, // Ancho del contenedor que contiene Checkbox y Text
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Checkbox(
+                                value: checkIp,
+                                onChanged: (newValue) {
+                                  // Cambiar el estado del checkbox
+                                  setState(() {
+                                    checkIp = newValue!;
+                                  });
+                                },
+                              ),
+                              SizedBox(
+                                height:
+                                    2, // Espacio entre el Checkbox y el Text "IP"
+                              ),
+                              Text(
+                                'IP',
+                                style: TextStyle(
+                                    fontSize: 16, fontWeight: FontWeight.bold),
+                              ),
+                            ],
+                          ),
+                        ),
+                        SizedBox(
+                            width:
+                                24), // Ajuste el espacio entre el Checkbox y el TextFormField
+                        Expanded(
+                          child: checkIp
+                              ? TextFormField(
+                                  controller: _iPController,
+                                  keyboardType: TextInputType.text,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(color: Colors.black),
+                                  decoration: InputDecoration(
+                                    hintText: 'IP',
+                                    hintStyle: TextStyle(color: Colors.black),
+                                    enabledBorder: UnderlineInputBorder(
+                                      borderSide: BorderSide(
+                                        color: Colors.black,
+                                      ),
+                                    ),
+                                    contentPadding: EdgeInsets.all(10.0),
+                                    border: UnderlineInputBorder(
+                                      borderSide: BorderSide(
+                                        color: Colors.black,
+                                      ),
+                                    ),
+                                  ),
+                                )
+                              : Container(), // Oculta el TextFormField si checkIp es falso
+                        ),
+                      ],
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(48.0, 10.0, 48.0, 0),
                     child: TextFormField(
                       controller: _extensionController,
                       keyboardType: TextInputType.text,
