@@ -23,6 +23,7 @@ class _MyDialPadWidget extends State<DialPadWidget>
     implements SipUaHelperListener {
   String? _dest;
   String? _ext;
+  String? _dominio;
   SIPUAHelper? get helper => widget._helper;
   TextEditingController? _textController;
   late SharedPreferences _preferences;
@@ -109,6 +110,7 @@ class _MyDialPadWidget extends State<DialPadWidget>
     //_dest = _preferences.getString('dest') ?? '8888';
     _dest = _preferences.getString('dest') ?? '';
     _ext = _preferences.getString('extension') ?? 'None';
+    _dominio = _preferences.getString('dominio') ?? '';
     _textController = TextEditingController(text: _dest);
     _textController!.text = _dest!;
 
@@ -412,7 +414,13 @@ class _MyDialPadWidget extends State<DialPadWidget>
                   style: TextStyle(fontSize: 25, color: Colors.white),
                 ),
               ),
-              accountEmail: null,
+              accountEmail: Padding(
+                padding: EdgeInsets.only(top: 0.0, left: 15),
+                child: Text(
+                  (_dominio ?? '').split('.')[0],
+                  style: TextStyle(fontSize: 15, color: Colors.white),
+                ),
+              ),
               currentAccountPicture: Padding(
                 padding: EdgeInsets.only(top: 0.0),
                 child: CircleAvatar(
