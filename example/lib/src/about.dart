@@ -106,7 +106,7 @@ class _AboutWidgetState extends State<AboutWidget> {
                   ),
                   SizedBox(height: 20),
                   Text(
-                    'V-1.0.0',
+                    'V-1.0.1',
                     style: TextStyle(
                       fontSize: 14,
                       color: Colors.black54,

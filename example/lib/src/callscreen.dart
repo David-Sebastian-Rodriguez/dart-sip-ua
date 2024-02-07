@@ -408,7 +408,12 @@ class _MyCallScreenWidget extends State<CallScreenWidget>
       barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Enter target to transfer.'),
+          title: Text(
+            idiomEs
+                ? 'Ingrese el número de destino.'
+                : 'Enter target to transfer.',
+            textAlign: TextAlign.center,
+          ),
           content: TextField(
             onChanged: (String text) {
               setState(() {
@@ -416,7 +421,7 @@ class _MyCallScreenWidget extends State<CallScreenWidget>
               });
             },
             decoration: InputDecoration(
-              hintText: 'URI or Username',
+              hintText: idiomEs ? 'Número' : 'Number',
             ),
             textAlign: TextAlign.center,
           ),
@@ -429,7 +434,7 @@ class _MyCallScreenWidget extends State<CallScreenWidget>
               },
             ),
             TextButton(
-              child: Text('Cancel'),
+              child: Text(idiomEs ? 'Cancelar' : 'Cancel'),
               onPressed: () {
                 Navigator.of(context).pop();
               },

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sip_ua/sip_ua.dart';
@@ -27,6 +29,8 @@ class _MyRegisterWidget extends State<RegisterWidget>
   bool _passwordVisible = false;
 
   SIPUAHelper? get helper => widget._helper;
+
+  bool isActiverTimer = false;
 
   @override
   initState() {
@@ -95,9 +99,11 @@ class _MyRegisterWidget extends State<RegisterWidget>
     print('intento de registro aaaaaaaaaaaaaaaaaa');
     if (_registerState.state == RegistrationStateEnum.REGISTERED) {
       _saveSettings();
+      isActiverTimer = false;
       Navigator.pushReplacementNamed(context, '/home');
-    } else {
+    } else if (isActiverTimer) {
       print('fallo aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
+      isActiverTimer = false;
       _alertFail(context);
     }
   }
@@ -110,7 +116,7 @@ class _MyRegisterWidget extends State<RegisterWidget>
         return AlertDialog(
           title: Text('Error al iniciar sesión'),
           content: Text(
-              'Error al intentar iniciar sesión. Por favor, verifique los campos Dominio, Usuario y Contraseña y de ser necesario añada una direccion IP.'),
+              'Error al intentar iniciar sesión. Por favor, verifique los campos Dominio, Usuario y Contraseña y de ser necesario añada una direccion IP y Verifíquela.'),
           actions: <Widget>[
             TextButton(
               child: Text('Ok'),
@@ -147,12 +153,16 @@ class _MyRegisterWidget extends State<RegisterWidget>
 
   void _handleSave(BuildContext context) {
     if (_domainController.text == '') {
+      isActiverTimer = false;
       _alert(context, "Dominio");
     } else if (_passwordController.text == '') {
+      isActiverTimer = false;
       _alert(context, "Contraseña");
     } else if (_extensionController.text == '') {
+      isActiverTimer = false;
       _alert(context, "Extensión");
     } else if (_iPController.text == '' && checkIp) {
+      isActiverTimer = false;
       _alert(context, "IP");
     } else {
       _sendAuth();
@@ -162,12 +172,18 @@ class _MyRegisterWidget extends State<RegisterWidget>
   void _sendAuth() {
     UaSettings settings = UaSettings();
 
-    settings.webSocketUrl = 'wss://${_domainController.text}:8534';
+    String iP = _domainController.text;
+    String dominio = _domainController.text;
+
+    if (_iPController.text != "" && checkIp) {
+      iP = _iPController.text;
+      dominio = _iPController.text;
+    }
+
+    settings.webSocketUrl = 'wss://$dominio:8534';
     settings.webSocketSettings.extraHeaders = _wsExtraHeaders;
     settings.webSocketSettings.allowBadCertificate = true;
     //settings.webSocketSettings.userAgent = 'Dart/2.8 (dart:io) for OpenSIPS.';
-
-    String iP = _domainController.text;
 
     /*switch (_domainController.text) {
       case 'yaco.calltechsa.com':
@@ -182,10 +198,6 @@ class _MyRegisterWidget extends State<RegisterWidget>
       default:
     } */
 
-    if (_iPController.text != "" && checkIp) {
-      iP = _iPController.text;
-    }
-
     //settings.uri = 'sip:${_extensionController.text}@143.244.209.136';
     //settings.uri = 'sip:${_extensionController.text}@$Ip';
     settings.uri = 'sip:${_extensionController.text}@$iP';
@@ -197,6 +209,14 @@ class _MyRegisterWidget extends State<RegisterWidget>
     settings.dtmfMode = DtmfMode.RFC2833;
 
     helper!.start(settings);
+
+    isActiverTimer = true;
+
+    Timer(Duration(seconds: 5), () {
+      if (isActiverTimer) {
+        _alertFail(context);
+      }
+    });
   }
 
   @override
