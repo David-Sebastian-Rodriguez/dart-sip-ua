@@ -97,6 +97,8 @@ class _MyDialPadWidget extends State<DialPadWidget>
         // widget is detached
         _appState = state;
         break;
+      case AppLifecycleState.hidden:
+        break;
     }
   }
 
