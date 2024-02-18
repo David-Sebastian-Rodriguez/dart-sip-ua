@@ -296,6 +296,7 @@ class _MyCallScreenWidget extends State<CallScreenWidget>
 
   void _backToDialPad() {
     _timer.cancel();
+    helper2.stop();
     Timer(Duration(seconds: 2), () {
       stopSound();
       Navigator.of(context).pop();
@@ -602,7 +603,7 @@ class _MyCallScreenWidget extends State<CallScreenWidget>
     );
 
     var hangupBtnInactive = ActionButton(
-      title: idiomEs ? "colgar" : "hangup",
+      title: idiomEs ? "Colgar" : "Hangup",
       onPressed: () {},
       icon: Icons.call_end,
       fillColor: Colors.grey,
@@ -616,7 +617,7 @@ class _MyCallScreenWidget extends State<CallScreenWidget>
       case CallStateEnum.CONNECTING:
         if (direction == 'INCOMING') {
           basicActions.add(ActionButton(
-            title: "Accept",
+            title: idiomEs ? "Aceptar" : "Accept",
             fillColor: Colors.green,
             icon: Icons.phone,
             onPressed: () => _handleAccept(),
@@ -920,7 +921,7 @@ class _MyCallScreenWidget extends State<CallScreenWidget>
                           idiomEs
                               ? (voiceOnly
                                       ? 'LLAMADA DE VOZ'
-                                      : 'LLAMADA DE VIDEO') +
+                                      : 'LLAMADA\n DE VIDEO') +
                                   (_hold &&
                                           !(call?.state.toString() ==
                                               "CallStateEnum.ENDED")

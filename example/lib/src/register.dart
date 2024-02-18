@@ -116,7 +116,7 @@ class _MyRegisterWidget extends State<RegisterWidget>
         return AlertDialog(
           title: Text('Error al iniciar sesión'),
           content: Text(
-              'Error al intentar iniciar sesión. Por favor, verifique los campos Dominio, Usuario y Contraseña y de ser necesario añada una direccion IP y Verifíquela.'),
+              'Error al intentar iniciar sesión. Por favor, verifique los campos Dominio, Usuario y Contraseña y de ser necesario añada una dirección IP y Verifíquela.'),
           actions: <Widget>[
             TextButton(
               child: Text('Ok'),
@@ -137,7 +137,7 @@ class _MyRegisterWidget extends State<RegisterWidget>
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text('$alertFieldName esta vacio'),
-          content: Text('Por favor ingrese $alertFieldName!'),
+          content: Text('Por favor ingrese $alertFieldName !'),
           actions: <Widget>[
             TextButton(
               child: Text('Ok'),
@@ -152,18 +152,40 @@ class _MyRegisterWidget extends State<RegisterWidget>
   }
 
   void _handleSave(BuildContext context) {
+    List<String> messageArray = [];
+
     if (_domainController.text == '') {
+      messageArray.add("dominio");
+    }
+
+    if (_passwordController.text == '') {
+      messageArray.add("contraseña");
+    }
+
+    if (_extensionController.text == '') {
+      messageArray.add("extensión");
+    }
+
+    if (_iPController.text == '' && checkIp) {
+      messageArray.add("dirección IP");
+    }
+
+    if (messageArray.isNotEmpty) {
       isActiverTimer = false;
-      _alert(context, "Dominio");
-    } else if (_passwordController.text == '') {
-      isActiverTimer = false;
-      _alert(context, "Contraseña");
-    } else if (_extensionController.text == '') {
-      isActiverTimer = false;
-      _alert(context, "Extensión");
-    } else if (_iPController.text == '' && checkIp) {
-      isActiverTimer = false;
-      _alert(context, "IP");
+
+      String message = "";
+
+      for (int i = 0; i < messageArray.length; i++) {
+        if (i == 0) {
+          message += messageArray[i];
+        } else if (i == messageArray.length - 1) {
+          message += " y " + messageArray[i];
+        } else {
+          message += ", " + messageArray[i];
+        }
+      }
+
+      _alert(context, message);
     } else {
       _sendAuth();
     }
@@ -201,7 +223,6 @@ class _MyRegisterWidget extends State<RegisterWidget>
     //settings.uri = 'sip:${_extensionController.text}@143.244.209.136';
     //settings.uri = 'sip:${_extensionController.text}@$Ip';
     settings.uri = 'sip:${_extensionController.text}@$iP';
-    print('${settings.uri} aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
 
     settings.authorizationUser = _extensionController.text;
     settings.password = _passwordController.text;
@@ -414,7 +435,7 @@ class _MyRegisterWidget extends State<RegisterWidget>
                       width: 160.0,
                       child: MaterialButton(
                         child: Text(
-                          'Register',
+                          'Registrar',
                           style: TextStyle(fontSize: 16.0, color: Colors.white),
                         ),
                         color: Colors.red,

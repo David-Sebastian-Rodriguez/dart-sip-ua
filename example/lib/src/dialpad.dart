@@ -97,8 +97,6 @@ class _MyDialPadWidget extends State<DialPadWidget>
         // widget is detached
         _appState = state;
         break;
-      case AppLifecycleState.hidden:
-        break;
     }
   }
 
@@ -168,7 +166,6 @@ class _MyDialPadWidget extends State<DialPadWidget>
           'sip:$_authorizationUserController@${_preferences.getString('dominio')}';
     }
 
-    print('${settings.uri} aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
     settings.authorizationUser = _authorizationUserController;
     settings.password = _passwordController;
     settings.userAgent = 'Dart SIP Client v1.0.0';
@@ -203,6 +200,10 @@ class _MyDialPadWidget extends State<DialPadWidget>
 
   Future<Widget?> _handleCall(BuildContext context,
       [bool voiceOnly = false]) async {
+    if (helper!.registerState.state != RegistrationStateEnum.REGISTERED) {
+      _alert(context, '');
+      return null;
+    }
     var dest = _textController?.text;
     if (defaultTargetPlatform == TargetPlatform.android ||
         defaultTargetPlatform == TargetPlatform.iOS) {
@@ -253,6 +254,27 @@ class _MyDialPadWidget extends State<DialPadWidget>
       mediaStream: mediaStream,
     );
     return null;
+  }
+
+  void _alert(BuildContext context, String alertFieldName) {
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Error con la llamada'),
+          content: Text('El usuario no está registrado en este momento.'),
+          actions: <Widget>[
+            TextButton(
+              child: Text('Ok'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _handleBackSpace([bool deleteAll = false]) {

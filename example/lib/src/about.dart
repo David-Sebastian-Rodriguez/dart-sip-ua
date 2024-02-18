@@ -88,7 +88,7 @@ class _AboutWidgetState extends State<AboutWidget> {
                   ),
                   SizedBox(height: 30),
                   Text(
-                    '© 2023 Calltech S.A',
+                    '© 2024 Calltech S.A',
                     style: TextStyle(
                       fontSize: 14,
                       color: Colors.black54,
