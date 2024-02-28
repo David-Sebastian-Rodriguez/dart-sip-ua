@@ -51,9 +51,14 @@ class _MyCallScreenWidget extends State<CallScreenWidget>
   AudioCache audioCache = AudioCache();
   AudioPlayer player = AudioPlayer();
 
-  bool get voiceOnly =>
-      (_localStream == null || _localStream!.getVideoTracks().isEmpty) &&
-      (_remoteStream == null || _remoteStream!.getVideoTracks().isEmpty);
+  bool get voiceOnly {
+    if (call!.direction == 'INCOMING') {
+      return !call!.remote_has_video;
+    } else {
+      return (_localStream == null || _localStream!.getVideoTracks().isEmpty) &&
+          (_remoteStream == null || _remoteStream!.getVideoTracks().isEmpty);
+    }
+  }
 
   String? get remoteIdentity => call!.remote_identity;
 
@@ -128,13 +133,8 @@ class _MyCallScreenWidget extends State<CallScreenWidget>
     settings.webSocketSettings.extraHeaders = _wsExtraHeaders;
     settings.webSocketSettings.allowBadCertificate = true;
     //settings.webSocketSettings.userAgent = 'Dart/2.8 (dart:io) for OpenSIPS.';
-    if (_preferences.getString('IPCheck').toString() == 'true') {
-      settings.uri =
-          'sip:$_authorizationUserController@${_preferences.getString('IP')}';
-    } else {
-      settings.uri =
-          'sip:$_authorizationUserController@${_preferences.getString('dominio')}';
-    }
+    settings.uri =
+        'sip:$_authorizationUserController@${_preferences.getString('dominioIP')}';
 
     print('${settings.uri} aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
     settings.authorizationUser = _authorizationUserController;
@@ -204,15 +204,22 @@ class _MyCallScreenWidget extends State<CallScreenWidget>
   }
 
   void playSound() async {
-    player = await audioCache.loop('sounds/call_sound.mp3');
+    print('play callscreen aaaaaaaaaaaaaaaaaaaaa');
+    if (player.state != PlayerState.PLAYING) {
+      player = await audioCache.loop('sounds/call_sound_1.mp3');
+    }
   }
 
   void stopSound() {
+    print('play dialpat aaaaaaaaaaaaaaaaaaaaa');
     player.stop();
   }
 
   @override
   void callStateChanged(Call call, CallState callState) {
+    print(
+        'arriba second call?: $secondCallStartered, issecondcall?: $isSecondCall, callstate: ${callState.state} aaaaaaaaaaaaaaaaaaaaaaaaa');
+
     if (callId1 == "") {
       callId1 = call.id!;
     }
@@ -225,7 +232,6 @@ class _MyCallScreenWidget extends State<CallScreenWidget>
         isSecondCall = true;
         call2 = call;
       }
-      return;
     }
 
     if (callState.state == CallStateEnum.HOLD ||
@@ -253,14 +259,35 @@ class _MyCallScreenWidget extends State<CallScreenWidget>
     if (callState.state != CallStateEnum.STREAM && callId1 == call.id) {
       _state = callState.state;
     }
+
+    print(
+        'abajo second call?: $secondCallStartered, issecondcall?: $isSecondCall, callstate: ${callState.state} aaaaaaaaaaaaaaaaaaaaaaaaa');
+
     switch (callState.state) {
       case CallStateEnum.STREAM:
         _handelStreams(callState);
         break;
       case CallStateEnum.ENDED:
+        if (!isSecondCall) {
+          _backToDialPad();
+        } else {
+          secondCallStartered = false;
+          isSecondCall = false;
+          callId2 = "";
+          setState(() {});
+          call2.hangup({'status_code': 603});
+          _backToDialPad();
+        }
+        break;
       case CallStateEnum.FAILED:
         if (!isSecondCall) {
           _backToDialPad();
+        } else {
+          secondCallStartered = false;
+          isSecondCall = false;
+          callId2 = "";
+          setState(() {});
+          call2.hangup({'status_code': 603});
         }
         break;
       case CallStateEnum.UNMUTED:
@@ -523,7 +550,7 @@ class _MyCallScreenWidget extends State<CallScreenWidget>
       mediaStream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
     }
 
-    var destUri = 'sip:$dest@143.244.209.136';
+    var destUri = 'sip:$dest@${_preferences.getString('dominioIP')}';
 
     helper2.call(
       destUri,
@@ -921,20 +948,20 @@ class _MyCallScreenWidget extends State<CallScreenWidget>
                           idiomEs
                               ? (voiceOnly
                                       ? 'LLAMADA DE VOZ'
-                                      : 'LLAMADA\n DE VIDEO') +
+                                      : 'LLAMADA\n DE VIDEO\n') +
                                   (_hold &&
                                           !(call?.state.toString() ==
                                               "CallStateEnum.ENDED")
-                                      ? ' EN PAUSA POR ${_holdOriginator!.toUpperCase()}'
+                                      ? ' EN PAUSA\n POR ${_holdOriginator!.toUpperCase()}'
                                       : (call?.state.toString() ==
                                               "CallStateEnum.ENDED")
                                           ? ' FINALIZADA'
                                           : '')
-                              : (voiceOnly ? 'VOICE CALL' : 'VIDEO CALL') +
+                              : (voiceOnly ? 'VOICE CALL\n' : 'VIDEO CALL\n') +
                                   (_hold &&
                                           !(call?.state.toString() ==
                                               "CallStateEnum.ENDED")
-                                      ? ' PAUSED BY ${_holdOriginator!.toUpperCase()}'
+                                      ? ' PAUSED BY\n ${_holdOriginator!.toUpperCase()}'
                                       : (call?.state.toString() ==
                                               "CallStateEnum.ENDED")
                                           ? ' ENDED'

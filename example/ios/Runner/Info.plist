@@ -100,5 +100,10 @@
 
 	<key>NSBluetoothPeripheralUsageDescription</key>
 	<string>Se requiere acceso para utilizar dispositivos Bluetooth.</string>
+
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string> <!-- Otras opciones según tus necesidades -->
+	</array>
 </dict>
 </plist>

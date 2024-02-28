@@ -32,9 +32,12 @@ class _MyDialPadWidget extends State<DialPadWidget>
 
   bool isInCalling = false;
 
+  bool isLogOut = false;
+
   late String _wsUriController;
   late String _passwordController;
   late String _authorizationUserController;
+  late String _callTone;
 
   String? receivedMsg;
 
@@ -84,6 +87,10 @@ class _MyDialPadWidget extends State<DialPadWidget>
           stopSound();
         }
         _appState = state;
+        Navigator.pushNamed(context, '/help');
+        Future.delayed(Duration(milliseconds: 200), () {
+          Navigator.pop(context);
+        });
         break;
       case AppLifecycleState.inactive:
         // widget is inactive
@@ -113,6 +120,10 @@ class _MyDialPadWidget extends State<DialPadWidget>
     _dominio = _preferences.getString('dominio') ?? '';
     _textController = TextEditingController(text: _dest);
     _textController!.text = _dest!;
+    if (_preferences.getString('tone') == null) {
+      await _preferences.setString('tone', 'sounds/call_sound_1.mp3');
+    }
+    _callTone = _preferences.getString('tone') ?? 'sounds/call_sound_1.mp3';
 
     if (!_preferences.containsKey('lang')) {
       _preferences.setString('lang', 'es');
@@ -158,13 +169,8 @@ class _MyDialPadWidget extends State<DialPadWidget>
     settings.webSocketSettings.extraHeaders = _wsExtraHeaders;
     settings.webSocketSettings.allowBadCertificate = true;
     //settings.webSocketSettings.userAgent = 'Dart/2.8 (dart:io) for OpenSIPS.';
-    if (_preferences.getString('IPCheck').toString() == 'true') {
-      settings.uri =
-          'sip:$_authorizationUserController@${_preferences.getString('IP')}';
-    } else {
-      settings.uri =
-          'sip:$_authorizationUserController@${_preferences.getString('dominio')}';
-    }
+    settings.uri =
+        'sip:$_authorizationUserController@${_preferences.getString('dominioIP')}';
 
     settings.authorizationUser = _authorizationUserController;
     settings.password = _passwordController;
@@ -175,7 +181,7 @@ class _MyDialPadWidget extends State<DialPadWidget>
   }
 
   void playSound() async {
-    player = await audioCache.loop('sounds/call_sound.mp3');
+    player = await audioCache.loop(_callTone);
   }
 
   void stopSound() {
@@ -191,6 +197,7 @@ class _MyDialPadWidget extends State<DialPadWidget>
     );
     if (_registerState.state != RegistrationStateEnum.REGISTERED) {
       //Codigo en caso de que el registro falle
+      if (!isLogOut) _alert(context, '');
     }
   }
 
@@ -216,8 +223,11 @@ class _MyDialPadWidget extends State<DialPadWidget>
         barrierDismissible: false,
         builder: (BuildContext context) {
           return AlertDialog(
-              title: Text('Target is empty.'),
-              content: Text('Please enter a SIP URI or username!'),
+              title: Text(
+                  idiomEs ? 'Número no especificado.' : 'Target is empty.'),
+              content: Text(idiomEs
+                  ? '¡Por favor, ingresa una URI SIP o un nombre de usuario!'
+                  : 'Please enter a SIP URI or username!'),
               actions: <Widget>[
                 TextButton(
                     child: Text('Ok'),
@@ -262,8 +272,10 @@ class _MyDialPadWidget extends State<DialPadWidget>
       barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Error con la llamada'),
-          content: Text('El usuario no está registrado en este momento.'),
+          title: Text(idiomEs ? 'Error de registro' : 'Registration Error'),
+          content: Text(idiomEs
+              ? 'El usuario no está registrado en este momento.'
+              : 'The user is not registered at the moment'),
           actions: <Widget>[
             TextButton(
               child: Text('Ok'),
@@ -540,6 +552,7 @@ class _MyDialPadWidget extends State<DialPadWidget>
               onTap: () async {
                 await _cleanAuth();
                 //_preferences.clear();
+                isLogOut = true;
                 helper!.stop();
                 Navigator.pushNamed(context, '/register');
               },
@@ -577,7 +590,6 @@ class _MyDialPadWidget extends State<DialPadWidget>
   @override
   void callStateChanged(Call call, CallState callState) {
     if (callState.state == CallStateEnum.CALL_INITIATION && !isInCalling) {
-      print('inCALLIGN: $isInCalling, state: ${callState.state} aaaaaaaaa');
       isInCalling = true;
       Navigator.pushNamed(context, '/callscreen', arguments: call);
       var dest = _textController?.text;
@@ -618,7 +630,9 @@ class _MyDialPadWidget extends State<DialPadWidget>
   void onNewNotify(Notify ntf) {}
 
   void _showIncomingCallNotification() async {
-    playSound();
+    if (player.state != PlayerState.PLAYING) {
+      playSound();
+    }
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails('incoming_call_channel', 'Incoming Call',
             channelDescription: 'Channel for incoming call notifications',

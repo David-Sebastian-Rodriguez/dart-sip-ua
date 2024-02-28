@@ -11,6 +11,7 @@ import 'src/callscreen.dart';
 import 'src/dialpad.dart';
 import 'src/register.dart';
 import 'src/contacts.dart';
+import 'src/help.dart';
 import 'src/call_history.dart';
 import 'package:flutter/services.dart';
 
@@ -52,6 +53,7 @@ class MyApp extends StatelessWidget {
     '/callscreen': ([SIPUAHelper? helper, Object? arguments]) =>
         CallScreenWidget(helper, arguments as Call?),
     '/about': ([SIPUAHelper? helper, Object? arguments]) => AboutWidget(),
+    '/help': ([SIPUAHelper? helper, Object? arguments]) => HelpPage(),
     '/config': ([SIPUAHelper? helper, Object? arguments]) =>
         ConfiguracionWidget(),
     '/contacts': ([SIPUAHelper? helper, Object? arguments]) => Contacts(helper),

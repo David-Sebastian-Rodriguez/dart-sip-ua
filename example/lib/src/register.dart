@@ -1,8 +1,10 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sip_ua/sip_ua.dart';
+import 'package:http/http.dart' as http;
 
 class RegisterWidget extends StatefulWidget {
   final SIPUAHelper? _helper;
@@ -15,7 +17,7 @@ class _MyRegisterWidget extends State<RegisterWidget>
     implements SipUaHelperListener {
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _domainController = TextEditingController();
-  final TextEditingController _iPController = TextEditingController();
+  //final TextEditingController _iPController = TextEditingController();
   final TextEditingController _extensionController = TextEditingController();
   final Map<String, String> _wsExtraHeaders = {
     // 'Origin': ' https://tryit.jssip.net',
@@ -31,6 +33,14 @@ class _MyRegisterWidget extends State<RegisterWidget>
   SIPUAHelper? get helper => widget._helper;
 
   bool isActiverTimer = false;
+
+  Map<String, dynamic> dataAccess = {
+    'domain': '',
+    'sipDomain': '',
+    'emExtensionNumber': '',
+    'emPassword': '',
+    'aboutUsLink': '',
+  };
 
   @override
   initState() {
@@ -65,28 +75,36 @@ class _MyRegisterWidget extends State<RegisterWidget>
 
     setState(() {
       _domainController.text = _preferences.getString('dominio') ?? '';
-      _iPController.text = _preferences.getString('IP') ?? '';
-      checkIp = _preferences.getString('IPCheck') == 'true';
+      //_iPController.text = _preferences.getString('IP') ?? '';
+      //checkIp = _preferences.getString('IPCheck') == 'true';
       _extensionController.text = _preferences.getString('extension') ?? '';
       _passwordController.text = _preferences.getString('password') ?? '';
     });
 
     if (validatePreference(_preferences) &&
-        _registerState.state != RegistrationStateEnum.REGISTERED) _sendAuth();
+        _registerState.state != RegistrationStateEnum.REGISTERED) {
+      _sendAuth({
+        'domain': _preferences.getString('dominio'),
+        'sipDomain': _preferences.getString('dominioIP'),
+        'emExtensionNumber': '',
+        'emPassword': '',
+        'aboutUsLink': '',
+      });
+    }
   }
 
   bool validatePreference(SharedPreferences preferences) {
     return preferences.containsKey('dominio') &&
         preferences.containsKey('password') &&
         preferences.containsKey('extension') &&
-        preferences.containsKey('IPCheck') &&
-        preferences.containsKey('IP');
+        //preferences.containsKey('IPCheck') &&
+        preferences.containsKey('dominioIP');
   }
 
   void _saveSettings() {
     _preferences.setString('dominio', _domainController.text);
-    _preferences.setString('IP', _iPController.text);
-    _preferences.setString('IPCheck', checkIp.toString());
+    _preferences.setString('dominioIP', dataAccess['sipDomain']);
+    //_preferences.setString('IPCheck', checkIp.toString());
     _preferences.setString('password', _passwordController.text);
     _preferences.setString('extension', _extensionController.text);
   }
@@ -96,13 +114,11 @@ class _MyRegisterWidget extends State<RegisterWidget>
     setState(() {
       _registerState = state;
     });
-    print('intento de registro aaaaaaaaaaaaaaaaaa');
     if (_registerState.state == RegistrationStateEnum.REGISTERED) {
       _saveSettings();
       isActiverTimer = false;
       Navigator.pushReplacementNamed(context, '/home');
     } else if (isActiverTimer) {
-      print('fallo aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
       isActiverTimer = false;
       _alertFail(context);
     }
@@ -116,7 +132,7 @@ class _MyRegisterWidget extends State<RegisterWidget>
         return AlertDialog(
           title: Text('Error al iniciar sesión'),
           content: Text(
-              'Error al intentar iniciar sesión. Por favor, verifique los campos Dominio, Usuario y Contraseña y de ser necesario añada una dirección IP y Verifíquela.'),
+              'Error al intentar iniciar sesión. Por favor, verifique los campos, Dominio, Usuario y Contraseña.'),
           actions: <Widget>[
             TextButton(
               child: Text('Ok'),
@@ -151,7 +167,7 @@ class _MyRegisterWidget extends State<RegisterWidget>
     );
   }
 
-  void _handleSave(BuildContext context) {
+  void _handleSave(BuildContext context) async {
     List<String> messageArray = [];
 
     if (_domainController.text == '') {
@@ -166,9 +182,9 @@ class _MyRegisterWidget extends State<RegisterWidget>
       messageArray.add("extensión");
     }
 
-    if (_iPController.text == '' && checkIp) {
+    /* if (_iPController.text == '' && checkIp) {
       messageArray.add("dirección IP");
-    }
+    } */
 
     if (messageArray.isNotEmpty) {
       isActiverTimer = false;
@@ -187,22 +203,101 @@ class _MyRegisterWidget extends State<RegisterWidget>
 
       _alert(context, message);
     } else {
-      _sendAuth();
+      Map<String, dynamic>? res = await _getDataAccess();
+      if (res != null) {
+        dataAccess = res;
+        _sendAuth(dataAccess);
+      } else {
+        _alertFail(context);
+      }
     }
   }
 
-  void _sendAuth() {
+  Future<Map<String, dynamic>?> _getDataAccess() async {
+    // URL de la solicitud POST
+    final String url =
+        'https://${_domainController.text}/web/index.php?r=api/auth/login';
+    //'http://${_domainController.text}:8091/web/index.php?r=api/auth/login';
+
+    print(url);
+
+    // Cuerpo de la solicitud POST
+    Map<String, dynamic> body = {
+      "uid": _extensionController.text,
+      "password": _passwordController.text,
+      "device_id": "mnedr453mfnbvslestQrRes",
+      "force_login": "1"
+    };
+
+    // Convierte el cuerpo a formato JSON
+    String jsonBody = json.encode(body);
+
+    try {
+      // Realiza la solicitud POST
+      http.Response response = await http.post(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonBody,
+      );
+
+      // Verifica el código de estado de la respuesta
+      if (response.statusCode == 200) {
+        // Procesa la respuesta exitosa
+        Map<String, dynamic> responseData = json.decode(response.body);
+        int status = responseData['status'];
+
+        if (status == 200) {
+          Map<String, dynamic> data = responseData['data'];
+          String domain = data['webrtc_url'];
+          String sipDomain = data['webrtc_sip_domain'];
+          String emExtensionNumber = data['em_extension_number'];
+          String emPassword = data['em_password'];
+          String aboutUsLink = data['about_us_link'];
+
+          Map<String, dynamic> res = {
+            'domain': domain,
+            'sipDomain': sipDomain,
+            'emExtensionNumber': emExtensionNumber,
+            'emPassword': emPassword,
+            'aboutUsLink': aboutUsLink,
+          };
+
+          print(res);
+          return res;
+        }
+      } else {
+        print('error');
+      }
+    } catch (error) {
+      print(error);
+      print('error web service');
+      return null;
+    }
+    print('eerror');
+
+    return null;
+  }
+
+  void _sendAuth(Map<String, dynamic> dataAccess) {
     UaSettings settings = UaSettings();
 
-    String iP = _domainController.text;
-    String dominio = _domainController.text;
+    String dominio = dataAccess['domain'];
+    String dominioSip = dataAccess['sipDomain'];
+
+    print('$dominioSip aaaaaaaaaaaaaaaaaaaa');
+
+    /* String iP = _domainController.text;
 
     if (_iPController.text != "" && checkIp) {
       iP = _iPController.text;
       dominio = _iPController.text;
     }
+    */
 
-    settings.webSocketUrl = 'wss://$dominio:8534';
+    //settings.webSocketUrl = 'wss://$dominio:8534';
+    settings.webSocketUrl = dominio;
     settings.webSocketSettings.extraHeaders = _wsExtraHeaders;
     settings.webSocketSettings.allowBadCertificate = true;
     //settings.webSocketSettings.userAgent = 'Dart/2.8 (dart:io) for OpenSIPS.';
@@ -222,7 +317,8 @@ class _MyRegisterWidget extends State<RegisterWidget>
 
     //settings.uri = 'sip:${_extensionController.text}@143.244.209.136';
     //settings.uri = 'sip:${_extensionController.text}@$Ip';
-    settings.uri = 'sip:${_extensionController.text}@$iP';
+    settings.uri = 'sip:${_extensionController.text}@$dominioSip';
+    //settings.uri = 'sip:${_extensionController.text}@$dominioSip';
 
     settings.authorizationUser = _extensionController.text;
     settings.password = _passwordController.text;
@@ -233,7 +329,7 @@ class _MyRegisterWidget extends State<RegisterWidget>
 
     isActiverTimer = true;
 
-    Timer(Duration(seconds: 5), () {
+    Timer(Duration(seconds: 8), () {
       if (isActiverTimer) {
         _alertFail(context);
       }
@@ -261,7 +357,7 @@ class _MyRegisterWidget extends State<RegisterWidget>
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: <Widget>[
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(48.0, 150.0, 48.0, 50.0),
+                    padding: const EdgeInsets.fromLTRB(48.0, 180.0, 48.0, 50.0),
                     child: Center(
                       child: Image.asset(
                         'assets/images/company_logo.webp',
@@ -293,7 +389,7 @@ class _MyRegisterWidget extends State<RegisterWidget>
                       ),
                     ),
                   ),
-                  Padding(
+                  /*Padding(
                     padding: const EdgeInsets.fromLTRB(48.0, 25.0, 48.0, 0),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -355,9 +451,9 @@ class _MyRegisterWidget extends State<RegisterWidget>
                         ),
                       ],
                     ),
-                  ),
+                  ), */
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(48.0, 10.0, 48.0, 0),
+                    padding: const EdgeInsets.fromLTRB(48.0, 35.0, 48.0, 0),
                     child: TextFormField(
                       controller: _extensionController,
                       keyboardType: TextInputType.text,
