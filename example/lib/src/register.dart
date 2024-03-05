@@ -373,6 +373,11 @@ class _MyRegisterWidget extends State<RegisterWidget>
                       textAlign: TextAlign.center,
                       style: TextStyle(color: Colors.black),
                       decoration: InputDecoration(
+                        focusedBorder: UnderlineInputBorder(
+                          borderSide: BorderSide(
+                              color: Colors
+                                  .red), // Color de la línea cuando está seleccionado
+                        ),
                         hintText: 'Dominio',
                         hintStyle: TextStyle(color: Colors.black),
                         enabledBorder: UnderlineInputBorder(
@@ -462,6 +467,11 @@ class _MyRegisterWidget extends State<RegisterWidget>
                         color: Colors.black,
                       ),
                       decoration: InputDecoration(
+                        focusedBorder: UnderlineInputBorder(
+                          borderSide: BorderSide(
+                              color: Colors
+                                  .red), // Color de la línea cuando está seleccionado
+                        ),
                         hintText: 'Extensión',
                         hintStyle: TextStyle(
                           color: Colors.black,
@@ -494,6 +504,11 @@ class _MyRegisterWidget extends State<RegisterWidget>
                       obscureText:
                           !_passwordVisible, // Oculta o muestra el texto según el valor de _passwordVisible
                       decoration: InputDecoration(
+                        focusedBorder: UnderlineInputBorder(
+                          borderSide: BorderSide(
+                              color: Colors
+                                  .red), // Color de la línea cuando está seleccionado
+                        ),
                         hintText: 'Contraseña',
                         hintStyle: TextStyle(
                           color: Colors.black,

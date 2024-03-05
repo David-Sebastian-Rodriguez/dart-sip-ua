@@ -119,6 +119,11 @@ class _CallHistoryState extends State<CallHistory> {
                                   color: Colors.white,
                                   size: 25,
                                 ),
+                                style: ButtonStyle(
+                                  backgroundColor:
+                                      MaterialStateProperty.all<Color>(
+                                          Colors.red),
+                                ),
                               ),
                             ],
                           ),
@@ -133,6 +138,11 @@ class _CallHistoryState extends State<CallHistory> {
                                   Icons.videocam_rounded,
                                   color: Colors.white,
                                   size: 25,
+                                ),
+                                style: ButtonStyle(
+                                  backgroundColor:
+                                      MaterialStateProperty.all<Color>(
+                                          Colors.red),
                                 ),
                               ),
                             ],

@@ -104,6 +104,9 @@ class _MyDialPadWidget extends State<DialPadWidget>
         // widget is detached
         _appState = state;
         break;
+      case AppLifecycleState.hidden:
+        // TODO: Handle this case.
+        break;
     }
   }
 
@@ -464,6 +467,9 @@ class _MyDialPadWidget extends State<DialPadWidget>
                   backgroundImage: AssetImage('assets/images/avatar.png'),
                   radius: 100,
                 ),
+              ),
+              decoration: BoxDecoration(
+                color: Colors.red, // Cambia este color según tus preferencias
               ),
             ),
             ListTile(

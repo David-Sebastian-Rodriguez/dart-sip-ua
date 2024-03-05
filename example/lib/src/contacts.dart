@@ -89,6 +89,7 @@ class _ContactsState extends State<Contacts> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: Colors.red,
         title: Text(
           idiomEs ? "Lista de Contactos" : 'Contact list',
           style: TextStyle(
@@ -243,6 +244,10 @@ class _ContactsState extends State<Contacts> {
                         context, contact.phones?.first.value ?? '', true);
                   },
                   child: Icon(Icons.call, color: Colors.white, size: 25),
+                  style: ButtonStyle(
+                    backgroundColor:
+                        MaterialStateProperty.all<Color>(Colors.red),
+                  ),
                 ),
               ),
               ElevatedButton(
@@ -251,6 +256,9 @@ class _ContactsState extends State<Contacts> {
                 },
                 child:
                     Icon(Icons.videocam_rounded, color: Colors.white, size: 25),
+                style: ButtonStyle(
+                  backgroundColor: MaterialStateProperty.all<Color>(Colors.red),
+                ),
               ),
             ],
           ),

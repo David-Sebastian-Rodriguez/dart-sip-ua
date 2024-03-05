@@ -78,6 +78,7 @@ class _ConfiguracionWidgetState extends State<ConfiguracionWidget> {
                     ),
                   ),
                   RadioListTile<String>(
+                    activeColor: Colors.red,
                     title: Text(
                       idiomEs ? 'Español' : 'Spanish',
                       style: TextStyle(
@@ -96,6 +97,7 @@ class _ConfiguracionWidgetState extends State<ConfiguracionWidget> {
                     },
                   ),
                   RadioListTile<String>(
+                    activeColor: Colors.red,
                     title: Text(
                       idiomEs ? 'Inglés' : 'English',
                       style: TextStyle(
