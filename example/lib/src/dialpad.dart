@@ -64,6 +64,7 @@ class _MyDialPadWidget extends State<DialPadWidget>
     receivedMsg = "";
     _bindEventListeners();
     _loadSettings();
+    _requestPermissions();
     // Add the observer.
     WidgetsBinding.instance.addObserver(this);
   }
@@ -107,6 +108,24 @@ class _MyDialPadWidget extends State<DialPadWidget>
       case AppLifecycleState.hidden:
         // TODO: Handle this case.
         break;
+    }
+  }
+
+  Future<void> _requestPermissions() async {
+    // Solicitar permisos
+    Map<Permission, PermissionStatus> statuses = await [
+      Permission.camera,
+      Permission.microphone,
+    ].request();
+
+    // Comprobar el estado de los permisos
+    if (statuses[Permission.camera] == PermissionStatus.granted &&
+        statuses[Permission.microphone] == PermissionStatus.granted) {
+      // Los permisos fueron concedidos, puedes realizar acciones que requieren cámara y micrófono.
+      print("Permisos concedidos");
+    } else {
+      // Al menos un permiso no fue concedido, puedes informar al usuario o tomar otras acciones.
+      print("Al menos un permiso no fue concedido");
     }
   }
 
